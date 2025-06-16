@@ -1,0 +1,263 @@
+{
+  "name": "Google Drive CSV Analysis",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://csv-query-mcp.onrender.com/mcp",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"list_drive_files\",\n    \"arguments\": {}\n  },\n  \"id\": 1\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -560,
+        -100
+      ],
+      "id": "d6c6b906-be72-40c3-955d-37abc03e4f60",
+      "name": "List Google Drive Files",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "BmH18rJURp4Qc8xL",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://csv-query-mcp.onrender.com/mcp",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"load_csv_from_drive\",\n    \"arguments\": {\n      \"fileId\": \"{{ $json.fileId }}\"\n    }\n  },\n  \"id\": 2\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -100,
+        -100
+      ],
+      "id": "b88ab772-cd7c-4a9f-8e51-ed9b8af5c177",
+      "name": "Load CSV from ZIP",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "BmH18rJURp4Qc8xL",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get CSV load response\nconst csvResponse = $input.first().json;\nconst csvText = csvResponse.result.content[0].text;\n\n// Get file info from previous steps\nconst fileInfo = $('Extract ZIP File Info').first().json;\nconst userQuestion = $('Chat Trigger').first().json.chatInput;\n\n// Create structured data for AI\nconst analysis = {\n  zipFileName: fileInfo.fileName,\n  csvFiles: csvText,\n  userQuestion: userQuestion,\n  instruction: \"Você é um analista fiscal brasileiro. Analise os dados das notas fiscais e responda à pergunta do usuário de forma concisa.\"\n};\n\nreturn analysis;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        120,
+        -100
+      ],
+      "id": "b00a06ae-aacc-46a1-9c62-8bb1940069fe",
+      "name": "Format Data for AI"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        260,
+        120
+      ],
+      "id": "a779ccd9-7be2-484f-b6ba-8c5c875ab005",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "cM0HMjheCuM9u45X",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Chat Trigger').item.json.sessionId }}",
+        "contextWindowLength": 15
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        440,
+        120
+      ],
+      "id": "5f58b74b-3fc3-4a22-aef5-63b56988e408",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Arquivo ZIP: {{ $json.zipFileName }}\n\nDados dos CSVs carregados:\n{{ $json.csvFiles }}\n\nPergunta do usuário: {{ $json.userQuestion }}\n\nPor favor, analise os dados e responda à pergunta de forma direta e precisa.",
+        "options": {
+          "systemMessage": "Você é um especialista em análise fiscal brasileira. Analise dados de notas fiscais e responda perguntas de forma clara e concisa. Sempre forneça números específicos quando possível."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        340,
+        -100
+      ],
+      "id": "e3fb826e-9be4-43d2-a558-68c34ecf3cfd",
+      "name": "AI Analysis"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the response from the previous node\nconst response = $input.first().json;\nconst fileText = response.result.content[0].text;\n\n// Extract file information\nconst lines = fileText.split('\\n');\nlet zipFileId = null;\nlet zipFileName = null;\n\nfor (const line of lines) {\n  if (line.includes('.zip')) {\n    // Extract file ID and name\n    const idMatch = line.match(/ID: ([a-zA-Z0-9_-]+)/);\n    const nameMatch = line.match(/^([^(]+)/);\n    \n    if (idMatch && nameMatch) {\n      zipFileId = idMatch[1];\n      zipFileName = nameMatch[1].trim();\n      break;\n    }\n  }\n}\n\nreturn { \n  fileId: zipFileId,\n  fileName: zipFileName,\n  fullFileList: fileText\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        -100
+      ],
+      "id": "b5bce8e8-89a1-41db-9690-96f2c65ac487",
+      "name": "Extract ZIP File Info"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -780,
+        -100
+      ],
+      "id": "1277b1c6-1311-48c7-ab65-1622ae762580",
+      "name": "Chat Trigger",
+      "webhookId": "e568a6a3-30ae-4135-a4e8-c3ff1620997d",
+      "notesInFlow": false
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "List Google Drive Files": {
+      "main": [
+        [
+          {
+            "node": "Extract ZIP File Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load CSV from ZIP": {
+      "main": [
+        [
+          {
+            "node": "Format Data for AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Data for AI": {
+      "main": [
+        [
+          {
+            "node": "AI Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Analysis",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract ZIP File Info": {
+      "main": [
+        [
+          {
+            "node": "Load CSV from ZIP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "List Google Drive Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "55434e0b-a2e4-4a2c-b97d-ace02d1f1344",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "eaebd30939f2fc986acde10a3ed66d23c143774e01686896b515439d5738bdd5"
+  },
+  "id": "QkxdUaHxsV4UtkQX",
+  "tags": []
+}
