@@ -1,0 +1,1340 @@
+{
+  "name": "CreditCard Fraud Analysis v3 FINAL",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## **Preparo do arquivo de entrada**\n(Assume arquivo creditcard.csv.zip no root folder do google drive)\n1. Download do zip contendo CSV, creditcard.csv.zip (67.5 MB)\n2. Descompactar Zip (CSV 147.3 MB)\n3. Converter o numero dado de registros para formato JSON \n\n\n\n",
+        "height": 400,
+        "width": 1584,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1824,
+        160
+      ],
+      "id": "a0baeb13-fcfa-4e60-ad00-0d1ab7eee28d",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## **Preparo de Meatadata e dados para o Pinecone Vector Store**\n\n1. Computar Metadata para Pinecone\n2. Criar os Embeddings para o Pinecone\n\n\n",
+        "height": 368,
+        "width": 1152,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3552,
+        176
+      ],
+      "id": "93039521-31d9-49f4-9494-5820df9ce412",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconsole.log(`[START] Processing ${items.length} transactions`);\n\n// Helper functions\nfunction detectOutliers(values) {\n  const sorted = [...values].filter(v => !isNaN(v)).sort((a, b) => a - b);\n  const q1 = sorted[Math.floor(sorted.length * 0.25)];\n  const q3 = sorted[Math.floor(sorted.length * 0.75)];\n  const iqr = q3 - q1;\n  const lowerBound = q1 - (1.5 * iqr);\n  const upperBound = q3 + (1.5 * iqr);\n  return values.map(v => v < lowerBound || v > upperBound);\n}\n\nfunction getAmountBucket(amount) {\n  if (amount < 10) return \"0-10\";\n  if (amount < 50) return \"10-50\";\n  if (amount < 100) return \"50-100\";\n  if (amount < 200) return \"100-200\";\n  if (amount < 500) return \"200-500\";\n  if (amount < 1000) return \"500-1000\";\n  return \"1000+\";\n}\n\nfunction getTimeBucket(time) {\n  const hours = time / 3600;\n  if (hours < 6) return \"0-6h\";\n  if (hours < 12) return \"6-12h\";\n  if (hours < 18) return \"12-18h\";\n  if (hours < 24) return \"18-24h\";\n  if (hours < 30) return \"24-30h\";\n  if (hours < 36) return \"30-36h\";\n  if (hours < 42) return \"36-42h\";\n  return \"42h+\";\n}\n\nfunction simpleClustering(data, k = 5) {\n  console.log(`[CLUSTERING] Processing ${data.length} items...`);\n  const result = [];\n  for (let i = 0; i < data.length; i++) {\n    const row = data[i].json || data[i];\n    const hash = (parseFloat(row.V1 || 0) + parseFloat(row.V2 || 0) + parseFloat(row.V3 || 0)) * 1000;\n    result.push(Math.abs(Math.floor(hash)) % k);\n  }\n  return result;\n}\n\n// Helper to get Time from first column\nfunction getTimeFromRow(row) {\n  const firstKey = Object.keys(row)[0];\n  return parseFloat(row[firstKey]) || 0;\n}\n\n// Compute metadata\nconsole.log(\"[OUTLIERS] Computing outliers...\");\nconst amounts = [];\nconst times = [];\nfor (let i = 0; i < items.length; i++) {\n  const row = items[i].json || items[i];\n  amounts.push(parseFloat(row.Amount || 0));\n  times.push(getTimeFromRow(row));\n}\n\nconst outlierFlags = detectOutliers(amounts);\nconst timeOutlierFlags = detectOutliers(times);\n\nconsole.log(\"[CLUSTERING] Computing clusters...\");\nconst clusterAssignments = simpleClustering(items, 5);\n\nconsole.log(\"[ANOMALY] Computing anomaly scores...\");\nconst anomalyScores = [];\nlet maxScore = 0;\nfor (let i = 0; i < items.length; i++) {\n  const row = items[i].json || items[i];\n  let sum = 0;\n  for (let j = 1; j <= 28; j++) {\n    sum += Math.abs(parseFloat(row[`V${j}`] || 0));\n  }\n  anomalyScores.push(sum);\n  if (sum > maxScore) maxScore = sum;\n}\n\n// Normalize scores\nconst normalizedScores = anomalyScores.map(s => s / maxScore);\n\n// Build output\nconst output = [];\nfor (let idx = 0; idx < items.length; idx++) {\n  const row = items[idx].json || items[idx];\n  const time = getTimeFromRow(row);\n  const amount = parseFloat(row.Amount || 0);\n  const fraudClass = parseInt(row.Class || 0);\n\n  output.push({\n    json: {\n      id: `txn_${String(idx).padStart(8, '0')}`,\n      Time: time,\n      V1: parseFloat(row.V1 || 0),\n      V2: parseFloat(row.V2 || 0),\n      V3: parseFloat(row.V3 || 0),\n      V4: parseFloat(row.V4 || 0),\n      V5: parseFloat(row.V5 || 0),\n      V6: parseFloat(row.V6 || 0),\n      V7: parseFloat(row.V7 || 0),\n      V8: parseFloat(row.V8 || 0),\n      V9: parseFloat(row.V9 || 0),\n      V10: parseFloat(row.V10 || 0),\n      V11: parseFloat(row.V11 || 0),\n      V12: parseFloat(row.V12 || 0),\n      V13: parseFloat(row.V13 || 0),\n      V14: parseFloat(row.V14 || 0),\n      V15: parseFloat(row.V15 || 0),\n      V16: parseFloat(row.V16 || 0),\n      V17: parseFloat(row.V17 || 0),\n      V18: parseFloat(row.V18 || 0),\n      V19: parseFloat(row.V19 || 0),\n      V20: parseFloat(row.V20 || 0),\n      V21: parseFloat(row.V21 || 0),\n      V22: parseFloat(row.V22 || 0),\n      V23: parseFloat(row.V23 || 0),\n      V24: parseFloat(row.V24 || 0),\n      V25: parseFloat(row.V25 || 0),\n      V26: parseFloat(row.V26 || 0),\n      V27: parseFloat(row.V27 || 0),\n      V28: parseFloat(row.V28 || 0),\n      Amount: amount,\n      transaction_id: `txn_${String(idx).padStart(8, '0')}`,\n      class: fraudClass,\n      class_label: fraudClass === 0 ? \"legitimate\" : \"fraud\",\n      amount_bucket: getAmountBucket(amount),\n      time_bucket: getTimeBucket(time),\n      is_outlier: outlierFlags[idx] || timeOutlierFlags[idx],\n      cluster_id: clusterAssignments[idx],\n      anomaly_score: parseFloat(normalizedScores[idx].toFixed(4)),\n      anomaly_level:\n        normalizedScores[idx] > 0.8\n          ? \"high\"\n          : normalizedScores[idx] > 0.5\n          ? \"medium\"\n          : \"low\",\n    },\n  });\n}\n\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3920,
+        336
+      ],
+      "id": "6a464029-14c3-40ab-9a8f-f2a488d8fb78",
+      "name": "Code - Compute Metadata6"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconsole.log(`Creating embeddings for ${items.length} items`);\n\nconst embeddings = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const data = items[i].json;\n  \n  const features = [];\n  \n  // 1️⃣ Add normalized Time first\n  const time = parseFloat(data.Time || 0);\n  features.push(time / 172800); // Normalize by ~2 days\n  \n  // 2️⃣ Add V1-V28 PCA features\n  for (let j = 1; j <= 28; j++) {\n    features.push(parseFloat(data[`V${j}`] || 0));\n  }\n  \n  // 3️⃣ Add normalized Amount\n  const amount = parseFloat(data.Amount || 0);\n  features.push(Math.log(amount + 1) / 10);\n  \n  // 4️⃣ Add Class (0 or 1)\n  features.push(parseFloat(data.class || 0));\n  \n  // Now features.length === 31\n  embeddings.push({\n    json: {\n      id: data.id || data.transaction_id || `txn_${String(i).padStart(8, '0')}`,\n      values: features,\n      metadata: {\n        transaction_id: data.transaction_id || data.id,\n        class: data.class,\n        class_label: data.class_label,\n        amount: data.Amount,\n        amount_bucket: data.amount_bucket,\n        time: data.Time,\n        time_bucket: data.time_bucket,\n        is_outlier: data.is_outlier,\n        cluster_id: data.cluster_id,\n        pca_cluster: `cluster_${data.cluster_id}`,\n        anomaly_score: data.anomaly_score,\n        anomaly_level: data.anomaly_level,\n        record_type: \"transaction\"\n      }\n    }\n  });\n  \n  if ((i + 1) % 10000 === 0) {\n    console.log(`Created ${i + 1} / ${items.length} embeddings`);\n  }\n}\n\nconsole.log(`Created ${embeddings.length} embedding vectors`);\nconsole.log(`Vector dimension: ${embeddings[0].json.values.length}`); // Should print 31\nconsole.log(`Sample vector (first 5 dims): ${embeddings[0].json.values.slice(0, 5).map(v => v.toFixed(3)).join(', ')}`);\n\nreturn embeddings;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4176,
+        336
+      ],
+      "id": "dd832603-169d-4758-afcc-06992b6db975",
+      "name": "Code - Create Embeddings6"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "file_0",
+        "options": {
+          "headerRow": true,
+          "maxRowCount": "={{ $node[\"Set load variables\"].json[\"numMaxRecordsToLoad\"] }}",
+          "fromLine": "={{ $node[\"Set load variables\"].json.startLine }}"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        3184,
+        336
+      ],
+      "id": "907de61a-1f05-4461-8641-da59f693ef33",
+      "name": "Extract from File6"
+    },
+    {
+      "parameters": {},
+      "id": "67d791d5-e172-4983-9924-e099bbd9b746",
+      "name": "Decompress1",
+      "type": "n8n-nodes-base.compression",
+      "typeVersion": 1,
+      "position": [
+        2624,
+        336
+      ],
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "15Suk2dvte849rHgR3oaFVr2-gzu0-2iR",
+          "mode": "list",
+          "cachedResultName": "creditcard.csv.zip",
+          "cachedResultUrl": "https://drive.google.com/file/d/15Suk2dvte849rHgR3oaFVr2-gzu0-2iR/view?usp=drivesdk"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "id": "58eece74-b633-4c7a-ac33-bf1ff0b232d6",
+      "name": "Google Drive Download1",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2320,
+        336
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "RX23XkAgwif02fAz",
+          "name": "Google Drive account 8"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Set load variables').first().json.pineconeLocation }}/vectors/upsert",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Api-Key",
+              "value": "={{ $('Set load variables').first().json.pinecone_APIKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    \"vectors\": [\n      {\n        \"id\": $json.id,\n        \"values\": $json.values,\n        \"metadata\": $json.metadata\n      }\n    ],\n    \"namespace\": \"default\"\n  }\n}}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 25,
+              "batchInterval": 1500
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5024,
+        336
+      ],
+      "id": "8a7a767f-4514-443e-989e-df11b749db9b",
+      "name": "HTTP Request POST to Pinecone1",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 5,
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "Cqo552PCiiOYtIoa",
+          "name": "Bearer Auth account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## **Inserir dados e Metadados no Pinecone**\n\n\n\n\n\n",
+        "height": 368,
+        "width": 624,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4816,
+        176
+      ],
+      "id": "ad70f002-0dc2-4436-abf5-8b486f549fca",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "fraud-chat-api",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        800,
+        1184
+      ],
+      "id": "50d06344-70da-49f4-ae91-9abe49f57f7d",
+      "name": "Webhook - API",
+      "webhookId": "452ecb7e-ae92-4c72-8aaf-c1fc42c5efce"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "output",
+              "name": "chatInput",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            },
+            {
+              "id": "session",
+              "name": "sessionId",
+              "value": "={{ $json.body.sessionId || 'default-session' }}",
+              "type": "string"
+            },
+            {
+              "id": "2f59a573-67b0-4aee-bfef-604ca06f4ffd",
+              "name": "pineconeUrl",
+              "value": "={{ $json.body.pineconeUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "ac1f967e-7f4d-420c-90e2-76c42bd0da47",
+              "name": "pineconeApiKey",
+              "value": "={{ $json.body.pineconeKey }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        1184
+      ],
+      "id": "41a7037e-0e4e-49c7-8b7e-6938b50e8fc9",
+      "name": "Format Input"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        5008,
+        1184
+      ],
+      "id": "8423a451-86b0-4b90-8149-26edcf9db0b9",
+      "name": "Respond with JSON"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-20250514",
+          "cachedResultName": "Claude 4 Sonnet"
+        },
+        "options": {
+          "maxTokensToSample": 4096,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        1920,
+        1360
+      ],
+      "id": "071507fa-3ddb-47ca-aa8d-61ff3f1ed9b4",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "IUR19Qd5OckVnKeL",
+          "name": "Anthropic account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 15
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        2224,
+        1424
+      ],
+      "id": "dae1f204-4cd0-4bfb-b85a-b17ecdbf3491",
+      "name": "Simple Memory1"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        2816,
+        1424
+      ],
+      "id": "45f6570f-f428-4300-a092-a1747bd1c1cf",
+      "name": "Code Tool1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Format Input').first().json.pineconeUrl }}/vectors/fetch",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Api-Key",
+              "value": "={{ $('Format Input').first().json.pineconeApiKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    \"vectors\": [\n      {\n        \"id\": $json.id,\n        \"values\": $json.values,\n        \"metadata\": $json.metadata\n      }\n    ],\n    \"namespace\": \"default\"\n  }\n}}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 25
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2528,
+        1424
+      ],
+      "id": "0509392c-2da5-4b5e-853a-244f8de1d893",
+      "name": "HTTP Request Fetch1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Format Input').first().json.pineconeUrl }}/query",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Api-Key",
+              "value": "={{ $('Format Input').first().json.pineconeApiKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"namespace\": \"default\",\n  \"topK\": 200,\n  \"includeMetadata\": true,\n  \"includeValues\": false,\n  \"vector\": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],\n  \"filter\": {}\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 25
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2672,
+        1424
+      ],
+      "id": "ae8de0fb-6d40-4578-a85b-171e597ccf11",
+      "name": "HTTP Request Query1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst output = item.output;\nconst jsonMatch = output.match(/```json\\s*([\\s\\S]*?)```/);\nlet structuredData = null;\nlet textResponse = output;\nif (jsonMatch && jsonMatch[1]) {\n  try {\n    structuredData = JSON.parse(jsonMatch[1].trim());\n    textResponse = output.replace(/```json[\\s\\S]*?```/g, '').trim();\n  } catch (e) {\n    console.log('Failed to parse JSON:', e.message);\n  }\n}\nreturn {\n  textResponse: textResponse,\n  hasStructuredData: !!structuredData,\n  structuredData: structuredData,\n  rawOutput: output\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3568,
+        1184
+      ],
+      "id": "36693778-0f78-4b08-bafa-793be053c9cb",
+      "name": "Extract JSON Data"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-data",
+              "leftValue": "={{ $json.hasStructuredData }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        3856,
+        1184
+      ],
+      "id": "7a03e5d8-5881-44a2-9d95-9d31613d7436",
+      "name": "Has Structured Data?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst data = item.structuredData;\nif (!data || !data.data) {\n  return item;\n}\nif (data.data.labels && data.data.values) {\n  if (data.data.labels.length !== data.data.values.length) {\n    throw new Error('Labels and values arrays must have the same length');\n  }\n}\nconst chartConfig = {\n  type: data.recommendedVisualization || 'bar',\n  title: data.title,\n  labels: data.data.labels,\n  values: data.data.values,\n  metadata: data.data.metadata || {},\n  insights: data.insights || []\n};\nif (chartConfig.type === 'pie' || chartConfig.type === 'doughnut') {\n  chartConfig.colors = ['#4ECDC4', '#FF6B6B', '#45B7D1', '#FFA07A', '#98D8C8'];\n} else if (chartConfig.type === 'bar') {\n  chartConfig.colors = ['#667eea'];\n} else if (chartConfig.type === 'line') {\n  chartConfig.colors = ['#667eea'];\n}\nreturn {\n  textResponse: item.textResponse,\n  structuredData: data,\n  chartConfig: chartConfig,\n  readyForVisualization: true\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4144,
+        1088
+      ],
+      "id": "5960bc37-3a3b-4227-823b-61a4aa371eb7",
+      "name": "Prepare for Visualization"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst config = item.chartConfig;\nif (!config) {\n  return item;\n}\nconst quickChartConfig = {\n  type: config.type,\n  data: {\n    labels: config.labels,\n    datasets: [{\n      label: config.title,\n      data: config.values,\n      backgroundColor: config.colors[0],\n      borderColor: config.colors[0],\n      borderWidth: 2,\n      fill: config.type === 'line' ? false : true\n    }]\n  },\n  options: {\n    title: {\n      display: true,\n      text: config.title,\n      fontSize: 16\n    },\n    legend: {\n      display: config.type === 'pie' || config.type === 'doughnut'\n    },\n    responsive: true,\n    maintainAspectRatio: true\n  }\n};\nif (config.type === 'pie' || config.type === 'doughnut') {\n  quickChartConfig.data.datasets[0].backgroundColor = config.colors;\n}\nconst encodedConfig = encodeURIComponent(JSON.stringify(quickChartConfig));\nconst chartUrl = `https://quickchart.io/chart?c=${encodedConfig}&width=800&height=500&backgroundColor=white&format=png`;\nreturn {\n  ...item,\n  chartUrl: chartUrl\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4432,
+        1088
+      ],
+      "id": "3201fa17-3000-4a59-8395-c9c4c4881ae5",
+      "name": "Generate Chart URL"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst hasChart = item.chartUrl && item.chartUrl.length > 0;\nconst response = {\n  text: item.textResponse,\n  hasVisualization: hasChart,\n  data: item.structuredData || null,\n  chartUrl: hasChart ? item.chartUrl : null,\n  insights: item.structuredData?.insights || [],\n  metadata: item.structuredData?.data?.metadata || {}\n};\nreturn response;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4720,
+        1184
+      ],
+      "id": "7b213780-b77f-40e9-a7ec-fb66f9f1191b",
+      "name": "Format Final Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nreturn {\n  text: item.textResponse,\n  hasVisualization: false,\n  data: null,\n  chartUrl: null,\n  insights: [],\n  metadata: {}\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4144,
+        1280
+      ],
+      "id": "9f2b6f61-9064-4cb0-97f2-b48e7d4b53bb",
+      "name": "Text-Only Response"
+    },
+    {
+      "parameters": {
+        "content": "## Data Retrieval & Processing Pipeline",
+        "height": 768,
+        "width": 1152,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1824,
+        992
+      ],
+      "id": "f7e9ded7-663a-4d63-92d2-344ef6bf6d15",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are an expert Credit Card Fraud Detection Data Analyst. Your job is to retrieve data from Pinecone and output structured JSON for visualization. When users request analysis, you should: 1) Retrieve relevant data from Pinecone, 2) Analyze using Code Tool, 3) Provide text explanation, 4) Output JSON in this format wrapped in ```json code blocks: {\"analysisType\": \"distribution|comparison|temporal\", \"title\": \"Title in Portuguese\", \"description\": \"What this represents\", \"data\": {\"labels\": [\"Cat1\", \"Cat2\"], \"values\": [123, 456], \"metadata\": {}}, \"insights\": [\"insight 1\", \"insight 2\"], \"recommendedVisualization\": \"bar|pie|line\"}. You do NOT create charts - just provide clean data."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2208,
+        1184
+      ],
+      "id": "80457538-2aeb-4b40-bbac-d5e8d7e2a457",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "063be24d-1dda-4604-be66-e8cd672f58cf",
+              "name": "pineconeLocation",
+              "value": "={{ $json.body.indexUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "7800be2d-3cc5-4a83-9b92-e12f0e32a098",
+              "name": "pinecone_APIKey",
+              "value": "={{ $json.body.apiKey }}",
+              "type": "string"
+            },
+            {
+              "id": "4928105b-65b2-4bcd-986b-05c4c081e639",
+              "name": "numMaxRecordsToLoad",
+              "value": "={{ $json.body.maxRecords }}",
+              "type": "number"
+            },
+            {
+              "id": "1fc34f1f-f4ac-445a-babf-6c191125a1d6",
+              "name": "startLine",
+              "value": "={{ $json.body.startLine }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1248,
+        336
+      ],
+      "id": "132cfc8f-31dd-48a9-8719-3cbf0f980f26",
+      "name": "Set load variables"
+    },
+    {
+      "parameters": {
+        "content": "## **Front-end - Send  HTML Page for analysis**\n\n1. Define API fraud-api URL\n2. Send HTML Page with Java Script to read responses from User Chat and call APIs fraud-api\n\n\n\n\n",
+        "height": 400,
+        "width": 1136,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1456,
+        1120
+      ],
+      "id": "136d8025-c75c-4aeb-ac2c-ef01a27c1090",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "## **API para carga do arquivo**\n\n1.  Define API fraud-load-api to start the data base load process\n2.  Seta variaveis com parametros de carga como \n2.1 URL do Index do pinecone\n2.2 Api-key do pinecone\n2.3 Numero de registros para carga no pinecone (rate limit faz velocidade da carga de ~ 30,000 registros/hora)\n\n\n\n",
+        "height": 400,
+        "width": 1136,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        320,
+        128
+      ],
+      "id": "440721ba-e242-43d3-91fa-93dda9842972",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "## **Formatacao da Resposta**\n\n1. Clean AI Agent Output as pure JSON\n2. Test if the response contain a chart\n3. If does contain a chart\n3.1 Prepare for visualization using QuickChart\n3.2 Format QuickChart URL\n4. If does not contain a chart, clean the chart fields\n5. Prepare data to be processed by front-end java script\n\n\n\n\n",
+        "height": 784,
+        "width": 2176,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3072,
+        992
+      ],
+      "id": "dad0995d-cc33-4c1d-8037-68e32d072874",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "content": "## **Front-end - Send  Main HTML Page**\n\n1. Set the URL\n2. Send HTML Page with options for load or analysis (API fraud-load-api or fraud-chat)\n\n\n\n\n",
+        "height": 400,
+        "width": 1136,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1456,
+        208
+      ],
+      "id": "21599b94-b6c9-47fc-847f-587cb8719199",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "content": "## **Front-end - Send  HTML Page for Loading**\n\n1. Define API fraud-load-api URL\n2. Send HTML Page with Java Script to read responses with load parameters and call API (fraud-Load-api)\n\n\n\n\n",
+        "height": 400,
+        "width": 1136,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1456,
+        672
+      ],
+      "id": "94f847ac-63de-4953-804b-1a6137fa394f",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "path": "fraud-chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -944,
+        368
+      ],
+      "id": "902460b2-7934-4ae0-94b1-803eb75f802b",
+      "name": "Webhook - Main HTML Page",
+      "webhookId": "fraud-chat-html"
+    },
+    {
+      "parameters": {
+        "path": "fraud-load",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -944,
+        832
+      ],
+      "id": "6679f3bf-bf0c-4d44-9a15-4167761cf8ae",
+      "name": "Webhook - HTML Page for Loading",
+      "webhookId": "fraud-chat-html"
+    },
+    {
+      "parameters": {
+        "path": "fraud-analysis",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -944,
+        1280
+      ],
+      "id": "be84be59-8b48-4286-b14d-9f0642caf442",
+      "name": "Webhook - HTML Page for Analysis",
+      "webhookId": "fraud-chat-html"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Credit Card Fraud Detection System</title>\n  <style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body {\n      font-family: \"Segoe UI\", Tahoma, Geneva, Verdana, sans-serif;\n      background: linear-gradient(135deg, #667eea, #764ba2);\n      min-height: 100vh;\n      display: flex;\n      justify-content: center;\n      align-items: center;\n      padding: 20px;\n    }\n    .container {\n      background: #ffffff;\n      border-radius: 20px;\n      box-shadow: 0px 8px 25px rgba(0,0,0,0.25);\n      max-width: 800px;\n      width: 100%;\n      overflow: hidden;\n    }\n    .header {\n      background: #667eea;\n      padding: 40px;\n      text-align: center;\n      color: white;\n    }\n    .header h1 { font-size: 32px; margin-bottom: 10px; }\n    .header p { opacity: 0.9; font-size: 16px; }\n    .content {\n      padding: 40px;\n    }\n    .option-card {\n      background: #f7f7fb;\n      border: 2px solid #e0e0e0;\n      border-radius: 12px;\n      padding: 30px;\n      margin-bottom: 20px;\n      cursor: pointer;\n      transition: all 0.3s;\n    }\n    .option-card:hover {\n      border-color: #667eea;\n      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);\n      transform: translateY(-2px);\n    }\n    .option-card h2 {\n      color: #667eea;\n      font-size: 24px;\n      margin-bottom: 10px;\n    }\n    .option-card p {\n      color: #666;\n      line-height: 1.6;\n    }\n    .icon {\n      font-size: 48px;\n      margin-bottom: 15px;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>💳 Credit Card Fraud Detection System</h1>\n      <p>Sistema de Detecção de Fraude em Cartão de Crédito</p>\n    </div>\n    <div class=\"content\">\n      <div class=\"option-card\" onclick=\"navigateTo('upload-zip')\">\n        <div class=\"icon\">📁</div>\n        <h2>Upload ZIP para Google Drive</h2>\n        <p>Envie arquivos ZIP do seu disco local para o Google Drive. Útil para fazer backup dos datasets antes do processamento.</p>\n      </div>\n      \n      <div class=\"option-card\" onclick=\"navigateTo('loading')\">\n        <div class=\"icon\">📤</div>\n        <h2>Carregar Dados no Pinecone</h2>\n        <p>Faça upload de dados CSV para o Vector Store do Pinecone. Configure o índice, chave API e número de registros a serem carregados.</p>\n      </div>\n      \n      <div class=\"option-card\" onclick=\"navigateTo('analysis')\">\n        <div class=\"icon\">📊</div>\n        <h2>Analisar Dados Existentes</h2>\n        <p>Converse com o Agente de IA para realizar análises exploratórias de dados sobre fraudes em cartão de crédito.</p>\n      </div>\n    </div>\n  </div>\n  <script>\n    const BASE_URL = (() => {\n      const origin = window.location.origin;\n      const protocol = window.location.protocol;\n      const host = window.location.host;\n      if (origin && origin !== 'null' && protocol !== 'about:') return origin;\n      if (protocol && protocol !== 'about:' && host) return protocol + '//' + host;\n      return '';\n    })();\n\n    function navigateTo(page) {\n      if (page === 'upload-zip') {\n        window.location.href = BASE_URL + '/webhook/upload-zip';\n      } else if (page === 'loading') {\n        window.location.href = BASE_URL + '/webhook/fraud-load';\n      } else if (page === 'analysis') {\n        window.location.href = BASE_URL + '/webhook/fraud-analysis';\n      }\n    }\n  </script>\n</body>\n</html>",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -576,
+        368
+      ],
+      "id": "bf4124de-145f-49da-a7f9-4e994650a4d8",
+      "name": "Respond to Main Webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Carregar Dados - Fraud Detection</title>\n  <style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body {\n      font-family: \"Segoe UI\", Tahoma, Geneva, Verdana, sans-serif;\n      background: linear-gradient(135deg, #667eea, #764ba2);\n      min-height: 100vh;\n      display: flex;\n      justify-content: center;\n      align-items: center;\n      padding: 20px;\n    }\n    .container {\n      background: #ffffff;\n      border-radius: 20px;\n      box-shadow: 0px 8px 25px rgba(0,0,0,0.25);\n      max-width: 700px;\n      width: 100%;\n      overflow: hidden;\n    }\n    .header {\n      background: #667eea;\n      padding: 30px;\n      text-align: center;\n      color: white;\n    }\n    .header h1 { font-size: 28px; margin-bottom: 10px; }\n    .header p { opacity: 0.9; font-size: 14px; }\n    .content {\n      padding: 40px;\n    }\n    .form-group {\n      margin-bottom: 25px;\n    }\n    .form-group label {\n      display: block;\n      margin-bottom: 8px;\n      font-weight: 600;\n      color: #333;\n    }\n    .form-group input {\n      width: 100%;\n      padding: 12px;\n      border: 2px solid #e0e0e0;\n      border-radius: 8px;\n      font-size: 14px;\n      transition: border-color 0.3s;\n    }\n    .form-group input:focus {\n      outline: none;\n      border-color: #667eea;\n    }\n    .form-group .helper {\n      font-size: 12px;\n      color: #666;\n      margin-top: 5px;\n    }\n    .estimate {\n      background: #f0f4ff;\n      border-left: 4px solid #667eea;\n      padding: 15px;\n      border-radius: 8px;\n      margin: 20px 0;\n      display: none;\n    }\n    .estimate strong { color: #667eea; }\n    .buttons {\n      display: flex;\n      gap: 10px;\n      margin-top: 30px;\n    }\n    .btn {\n      flex: 1;\n      padding: 14px;\n      border: none;\n      border-radius: 8px;\n      font-size: 16px;\n      font-weight: 600;\n      cursor: pointer;\n      transition: all 0.3s;\n    }\n    .btn-primary {\n      background: #667eea;\n      color: white;\n    }\n    .btn-primary:hover {\n      background: #4a5cd1;\n    }\n    .btn-primary:disabled {\n      opacity: 0.5;\n      cursor: not-allowed;\n    }\n    .btn-secondary {\n      background: #e0e0e0;\n      color: #333;\n    }\n    .btn-secondary:hover {\n      background: #d0d0d0;\n    }\n    .loading {\n      text-align: center;\n      padding: 20px;\n      display: none;\n    }\n    .loading-spinner {\n      border: 4px solid #f3f3f3;\n      border-top: 4px solid #667eea;\n      border-radius: 50%;\n      width: 40px;\n      height: 40px;\n      animation: spin 1s linear infinite;\n      margin: 0 auto 15px;\n    }\n    @keyframes spin {\n      0% { transform: rotate(0deg); }\n      100% { transform: rotate(360deg); }\n    }\n    .success {\n      background: #d4edda;\n      color: #155724;\n      padding: 15px;\n      border-radius: 8px;\n      border-left: 4px solid #28a745;\n      margin-top: 20px;\n      display: none;\n    }\n    .error {\n      background: #f8d7da;\n      color: #721c24;\n      padding: 15px;\n      border-radius: 8px;\n      border-left: 4px solid #dc3545;\n      margin-top: 20px;\n      display: none;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>📤 Carregar Dados no Pinecone</h1>\n      <p>Configure os parâmetros para carregar dados de transações</p>\n    </div>\n    <div class=\"content\">\n      <form id=\"loadForm\">\n        <div class=\"form-group\">\n          <label for=\"indexUrl\">URL do Índice Pinecone *</label>\n          <input type=\"text\" id=\"indexUrl\" required \n                 placeholder=\"https://creditcard-fraud-eda-x8q6et6.svc.aped-4627-b74a.pinecone.io\">\n          <div class=\"helper\">URL completa do índice Pinecone (sem /vectors/upsert)</div>\n        </div>\n\n        <div class=\"form-group\">\n          <label for=\"apiKey\">API Key do Pinecone *</label>\n          <input type=\"password\" id=\"apiKey\" required \n                 placeholder=\"pcsk_...\">\n          <div class=\"helper\">Sua chave de API do Pinecone</div>\n        </div>\n\n        <div class=\"form-group\">\n          <label for=\"maxRecords\">Número Máximo de Registros *</label>\n          <input type=\"number\" id=\"maxRecords\" required min=\"1000\" max=\"300000\" \n                 value=\"30000\" onchange=\"calculateEstimate()\">\n          <div class=\"helper\">Entre 1.000 e 300.000 registros (dataset completo: 284.807)</div>\n        </div>\n\n        <div class=\"form-group\">\n          <label for=\"startLine\">Registro Inicial *</label>\n          <input type=\"number\" id=\"startLine\" required min=\"1\" max=\"284807\" \n                 value=\"1\" onchange=\"calculateEstimate()\">\n          <div class=\"helper\">Linha inicial para começar a leitura (padrão: 1)</div>\n        </div>\n\n        <div class=\"estimate\" id=\"estimate\">\n          <strong>⏱️ Tempo Estimado:</strong> <span id=\"estimateTime\">-</span>\n          <br>\n          <small>Baseado em 30.000 registros/hora (pré-processamento + upload Pinecone)</small>\n        </div>\n\n        <div class=\"buttons\">\n          <button type=\"button\" class=\"btn btn-secondary\" onclick=\"goBack()\">Voltar</button>\n          <button type=\"submit\" class=\"btn btn-primary\" id=\"submitBtn\">Iniciar Carga</button>\n        </div>\n      </form>\n\n      <div class=\"loading\" id=\"loading\">\n        <div class=\"loading-spinner\"></div>\n        <p>Iniciando processo de carga...</p>\n      </div>\n\n      <div class=\"success\" id=\"success\">\n        <strong>✓ Sucesso!</strong><br>\n        Processo de carga iniciado. Os dados estão sendo processados em background.\n      </div>\n\n      <div class=\"error\" id=\"error\">\n        <strong>✗ Erro</strong><br>\n        <span id=\"errorMessage\">Erro ao iniciar carga. Verifique os parâmetros.</span>\n      </div>\n    </div>\n  </div>\n\n  <script>\n    const API_URL = (() => {\n      const origin = window.location.origin;\n      const protocol = window.location.protocol;\n      const host = window.location.host;\n      if (origin && origin !== 'null' && protocol !== 'about:') return origin + '/webhook/fraud-load-api';\n      if (protocol && protocol !== 'about:' && host) return protocol + '//' + host + '/webhook/fraud-load-api';\n      return '/webhook/fraud-load-api';\n    })();\n\n    function calculateEstimate() {\n      const records = parseInt(document.getElementById('maxRecords').value) || 0;\n      if (records > 0) {\n        const hours = records / 30000;\n        const minutes = Math.ceil(hours * 60);\n        let timeStr = '';\n        if (hours >= 1) {\n          const h = Math.floor(hours);\n          const m = Math.ceil((hours - h) * 60);\n          timeStr = `${h}h ${m}min`;\n        } else {\n          timeStr = `${minutes} minutos`;\n        }\n        document.getElementById('estimateTime').textContent = timeStr;\n        document.getElementById('estimate').style.display = 'block';\n      }\n    }\n\n    function goBack() {\n      const baseUrl = (() => {\n        const origin = window.location.origin;\n        const protocol = window.location.protocol;\n        const host = window.location.host;\n        if (origin && origin !== 'null' && protocol !== 'about:') return origin;\n        if (protocol && protocol !== 'about:' && host) return protocol + '//' + host;\n        return '';\n      })();\n      window.location.href = baseUrl + '/webhook/fraud-chat';\n    }\n\n    calculateEstimate();\n\n    document.getElementById('loadForm').addEventListener('submit', async function(e) {\n      e.preventDefault();\n      \n      const indexUrl = document.getElementById('indexUrl').value.trim();\n      const apiKey = document.getElementById('apiKey').value.trim();\n      const maxRecords = parseInt(document.getElementById('maxRecords').value);\n      const startLine = parseInt(document.getElementById('startLine').value);\n\n      document.getElementById('loadForm').style.display = 'none';\n      document.getElementById('loading').style.display = 'block';\n\n      try {\n        const response = await fetch(API_URL, {\n          method: 'POST',\n          headers: { 'Content-Type': 'application/json' },\n          body: JSON.stringify({\n            indexUrl: indexUrl,\n            apiKey: apiKey,\n            maxRecords: maxRecords,\n            startLine: startLine\n          })\n        });\n\n        const result = await response.json();\n        console.log('Load response:', result);\n\n        document.getElementById('loading').style.display = 'none';\n        document.getElementById('success').style.display = 'block';\n\n        setTimeout(() => goBack(), 3000);\n\n      } catch (error) {\n        console.error('Error:', error);\n        document.getElementById('loading').style.display = 'none';\n        document.getElementById('error').style.display = 'block';\n        document.getElementById('errorMessage').textContent = error.message;\n      }\n    });\n  </script>\n</body>\n</html>",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -576,
+        832
+      ],
+      "id": "84191a91-89c8-45c7-b75d-1ef9864971cc",
+      "name": "Respond to Loading Webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Fraud Detection Chat</title>\n  <style>\n    body {\n      margin: 0;\n      font-family: \"Segoe UI\", Tahoma, Geneva, Verdana, sans-serif;\n      background: linear-gradient(135deg, #667eea, #764ba2);\n      display: flex;\n      justify-content: center;\n      align-items: center;\n      height: 100vh;\n      color: #fff;\n    }\n\n    .chat-container {\n      width: 90%;\n      max-width: 700px;\n      height: 85vh;\n      background: #ffffff;\n      border-radius: 20px;\n      display: flex;\n      flex-direction: column;\n      box-shadow: 0px 8px 25px rgba(0,0,0,0.25);\n      overflow: hidden;\n    }\n\n    .header {\n      background: #667eea;\n      padding: 15px;\n      font-size: 20px;\n      font-weight: bold;\n      text-align: center;\n      color: white;\n    }\n\n    .config-panel {\n      background: #f7f7fb;\n      padding: 15px;\n      border-bottom: 1px solid #ddd;\n    }\n\n    .config-group {\n      margin-bottom: 10px;\n    }\n\n    .config-group label {\n      display: block;\n      font-size: 12px;\n      color: #667eea;\n      font-weight: 600;\n      margin-bottom: 5px;\n    }\n\n    .config-group input {\n      width: 100%;\n      padding: 8px;\n      border: 1px solid #ccc;\n      border-radius: 6px;\n      font-size: 13px;\n    }\n\n    .messages {\n      flex: 1;\n      padding: 20px;\n      overflow-y: auto;\n      background: #f7f7fb;\n    }\n\n    .message {\n      margin-bottom: 15px;\n      display: flex;\n    }\n\n    .message.user {\n      justify-content: flex-end;\n    }\n\n    .message.agent {\n      justify-content: flex-start;\n    }\n\n    .message-content {\n      max-width: 70%;\n      padding: 12px 18px;\n      border-radius: 18px;\n      line-height: 1.4;\n      white-space: pre-wrap;\n    }\n\n    .user .message-content {\n      background: #667eea;\n      color: #fff;\n      border-bottom-right-radius: 4px;\n    }\n\n    .agent .message-content {\n      background: #ececec;\n      color: #333;\n      border-bottom-left-radius: 4px;\n    }\n\n    .input-container {\n      display: flex;\n      padding: 15px;\n      background: #fff;\n      border-top: 1px solid #ddd;\n    }\n\n    .input-container input {\n      flex: 1;\n      padding: 12px;\n      border-radius: 25px;\n      border: 1px solid #ccc;\n      outline: none;\n      margin-right: 10px;\n    }\n\n    .input-container button {\n      padding: 12px 20px;\n      border: none;\n      border-radius: 25px;\n      background: #667eea;\n      color: #fff;\n      font-weight: bold;\n      cursor: pointer;\n      transition: background 0.3s;\n    }\n\n    .input-container button:hover {\n      background: #4a5cd1;\n    }\n\n    .loading {\n      text-align: center;\n      padding: 10px;\n      color: #888;\n      font-size: 14px;\n      display: none;\n    }\n\n    .insights {\n      margin-top: 10px;\n      padding: 10px;\n      background: #fafafa;\n      border-left: 4px solid #667eea;\n      font-size: 14px;\n      border-radius: 8px;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"chat-container\">\n    <div class=\"header\">💳 Fraud Detection Assistant</div>\n    \n    <div class=\"config-panel\">\n      <div class=\"config-group\">\n        <label for=\"pineconeUrl\">URL do Índice Pinecone para Análise</label>\n        <input type=\"text\" id=\"pineconeUrl\" \n               value=\"https://creditcard-fraud-eda2-x8q6et6.svc.aped-4627-b74a.pinecone.io\"\n               placeholder=\"URL do índice Pinecone\">\n      </div>\n      <div class=\"config-group\">\n        <label for=\"pineconeKey\">API Key do Pinecone</label>\n        <input type=\"password\" id=\"pineconeKey\" \n               placeholder=\"pcsk_...\">\n      </div>\n    </div>\n\n    <div id=\"chatContainer\" class=\"messages\"></div>\n    <div id=\"loading\" class=\"loading\">⏳ Processando...</div>\n    <div class=\"input-container\">\n      <input id=\"userInput\" type=\"text\" placeholder=\"Digite sua mensagem...\" onkeypress=\"handleKeyPress(event)\">\n      <button id=\"sendBtn\" onclick=\"sendMessage()\">Enviar</button>\n    </div>\n  </div>\n\n  <script>\n    const WEBHOOK_URL = (() => {\n      const origin = window.location.origin;\n      const protocol = window.location.protocol;\n      const host = window.location.host;\n      \n      // Check if we have a valid origin (not 'null' and not 'about:')\n      if (origin && origin !== 'null' && protocol !== 'about:') {\n        return origin + '/webhook/fraud-chat-api';\n      }\n      \n      // Check if we have valid protocol and host\n      if (protocol && protocol !== 'about:' && host) {\n        return protocol + '//' + host + '/webhook/fraud-chat-api';\n      }\n      \n      // Fallback to relative path\n      return '/webhook/fraud-chat-api';\n    })();\n\n    console.log('WEBHOOK_URL:', WEBHOOK_URL);\n    console.log('Origin:', window.location.origin);\n    console.log('Protocol:', window.location.protocol);\n    console.log('Host:', window.location.host);\n\n    function handleKeyPress(event) {\n      if (event.key === 'Enter') sendMessage();\n    }\n\n    async function sendMessage() {\n      const input = document.getElementById('userInput');\n      const message = input.value.trim();\n      const pineconeUrl = document.getElementById('pineconeUrl').value.trim();\n      const pineconeKey = document.getElementById('pineconeKey').value.trim();\n      \n      if (!message) return;\n\n      addMessage(message, 'user');\n      input.value = '';\n      document.getElementById('loading').style.display = 'block';\n      document.getElementById('sendBtn').disabled = true;\n\n      try {\n        const response = await fetch(WEBHOOK_URL, {\n          method: 'POST',\n          headers: { 'Content-Type': 'application/json' },\n          body: JSON.stringify({ \n            message: message, \n            sessionId: 'web-session',\n            pineconeUrl: pineconeUrl,\n            pineconeKey: pineconeKey\n          })\n        });\n\n        const result = await response.json();\n        console.log('Response data:', result);\n\n        displayResponse(result);\n\n      } catch (error) {\n        console.error('Error:', error);\n        addMessage('⚠️ Desculpe, encontrei um erro. Por favor, tente novamente.', 'agent');\n      }\n\n      document.getElementById('loading').style.display = 'none';\n      document.getElementById('sendBtn').disabled = false;\n    }\n\n    function displayResponse(result) {\n      const res = Array.isArray(result) ? result[0] : result;\n\n      const responseText = res.text || res.reply || res.message || 'Sem resposta do servidor.';\n      const chartUrl = res.chartUrl || null;\n      const insights = res.insights || [];\n\n      addMessage(responseText, 'agent', chartUrl, insights);\n\n      if (res.hasVisualization && res.data) {\n        console.log('Structured data:', res.data);\n        console.log('Metadata:', res.metadata);\n      }\n    }\n\n    function addMessage(text, sender, chartUrl, insights) {\n      const container = document.getElementById('chatContainer');\n      const messageDiv = document.createElement('div');\n      messageDiv.className = `message ${sender}`;\n      const contentDiv = document.createElement('div');\n      contentDiv.className = 'message-content';\n\n      const cleanText = text ? text.replace(/```json[\\s\\S]*?```/g, '') : '';\n\n      contentDiv.innerHTML = cleanText\n        .replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>')\n        .replace(/\\n\\n/g, '<br><br>')\n        .replace(/\\n/g, '<br>')\n        .replace(/###\\s+(.*?)(<br>|$)/g, '<h3>$1</h3>')\n        .replace(/##\\s+(.*?)(<br>|$)/g, '<h3>$1</h3>')\n        .replace(/- (.*?)(<br>|$)/g, '<li>$1</li>');\n\n      if (chartUrl) {\n        const img = document.createElement('img');\n        img.src = chartUrl;\n        img.alt = 'Visualização de Dados';\n        img.style.marginTop = '15px';\n        img.style.maxWidth = '100%';\n        contentDiv.appendChild(img);\n      }\n\n      if (insights && insights.length > 0) {\n        const insightsDiv = document.createElement('div');\n        insightsDiv.className = 'insights';\n        insightsDiv.innerHTML = '<strong>Principais Insights:</strong><br>' + \n          insights.map(i => '• ' + i).join('<br>');\n        contentDiv.appendChild(insightsDiv);\n      }\n\n      messageDiv.appendChild(contentDiv);\n      container.appendChild(messageDiv);\n      container.scrollTop = container.scrollHeight;\n    }\n  </script>\n</body>\n</html>",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -576,
+        1280
+      ],
+      "id": "6f84c3b6-4062-4a38-9541-35338714ef24",
+      "name": "Respond to Analysis Webhook"
+    },
+    {
+      "parameters": {
+        "content": "# **Front-end**\n\n\n\n\n",
+        "height": 2144,
+        "width": 1680
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1776,
+        16
+      ],
+      "id": "a60bbaeb-d13d-45fb-b42c-9b7dea9d36a8",
+      "name": "Sticky Note12"
+    },
+    {
+      "parameters": {
+        "content": "# **Back-end APIs**\n\n\n\n\n",
+        "height": 2160,
+        "width": 1680
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "eb3566d5-c1ae-4dd8-91bf-0fbcfd3239b8",
+      "name": "Sticky Note13"
+    },
+    {
+      "parameters": {
+        "content": "# **Back-end Analysis**\n\n\n\n\n",
+        "height": 1344,
+        "width": 4080
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        800
+      ],
+      "id": "6b8638a9-4dc3-4dee-8798-cc741ae937b2",
+      "name": "Sticky Note14"
+    },
+    {
+      "parameters": {
+        "content": "# **Back-end Loading**\n\n\n\n\n",
+        "height": 688,
+        "width": 4080
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1728,
+        0
+      ],
+      "id": "3ad7426f-2151-4ecc-9fde-50f4beaca865",
+      "name": "Sticky Note15"
+    },
+    {
+      "parameters": {
+        "content": "## **API para Analise estatistica**\n\n1.  Define API fraud-api to start the AI Agent for statistical analysis\n2.  Formata entrada de dados\n\n\n\n",
+        "height": 400,
+        "width": 1136,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        304,
+        1008
+      ],
+      "id": "6e850dea-7802-4c09-aec3-6df80299cf08",
+      "name": "Sticky Note16"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "fraud-load-api",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        816,
+        336
+      ],
+      "id": "ce214aad-7843-4b40-8552-04182254d556",
+      "name": "Webhook Pinecone Load API",
+      "webhookId": "8c6717e1-6c7d-448e-ae70-bbb08cdeec93"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        5568,
+        336
+      ],
+      "id": "2701b13b-e457-4a4e-9b2f-309c8de0c5f0",
+      "name": "Respond to Loading Webhook2"
+    },
+    {
+      "parameters": {
+        "path": "upload-zip",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "71a68261-e583-432f-a025-fa7afd87fc7d",
+      "name": "Webhook - Display Form",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -944,
+        1840
+      ],
+      "webhookId": "e707f7ae-749a-4cb2-a2a6-3d360a980e86"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Upload ZIP para Google Drive</title>\n    <style>\n        * { margin: 0; padding: 0; box-sizing: border-box; }\n        body {\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            min-height: 100vh;\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            padding: 20px;\n        }\n        .container {\n            background: white;\n            padding: 40px;\n            border-radius: 20px;\n            box-shadow: 0 20px 60px rgba(0,0,0,0.3);\n            max-width: 500px;\n            width: 100%;\n        }\n        h1 {\n            color: #333;\n            margin-bottom: 10px;\n            font-size: 28px;\n        }\n        .subtitle {\n            color: #666;\n            margin-bottom: 30px;\n            font-size: 14px;\n        }\n        .form-group {\n            margin-bottom: 25px;\n        }\n        label {\n            display: block;\n            margin-bottom: 8px;\n            color: #555;\n            font-weight: 600;\n            font-size: 14px;\n        }\n        input[type=\"text\"] {\n            width: 100%;\n            padding: 12px 15px;\n            border: 2px solid #e0e0e0;\n            border-radius: 8px;\n            font-size: 14px;\n            transition: all 0.3s;\n        }\n        input[type=\"text\"]:focus {\n            outline: none;\n            border-color: #667eea;\n            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);\n        }\n        .hint {\n            font-size: 12px;\n            color: #888;\n            margin-top: 5px;\n        }\n        button {\n            width: 100%;\n            padding: 14px;\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            color: white;\n            border: none;\n            border-radius: 8px;\n            font-size: 16px;\n            font-weight: 600;\n            cursor: pointer;\n            transition: transform 0.2s, box-shadow 0.2s;\n        }\n        button:hover {\n            transform: translateY(-2px);\n            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);\n        }\n        button:active {\n            transform: translateY(0);\n        }\n        .result {\n            margin-top: 20px;\n            padding: 15px;\n            border-radius: 8px;\n            display: none;\n        }\n        .result.success {\n            background: #d4edda;\n            color: #155724;\n            border: 1px solid #c3e6cb;\n        }\n        .result.error {\n            background: #f8d7da;\n            color: #721c24;\n            border: 1px solid #f5c6cb;\n        }\n        .loading {\n            display: none;\n            text-align: center;\n            margin-top: 20px;\n        }\n        .spinner {\n            border: 3px solid #f3f3f3;\n            border-top: 3px solid #667eea;\n            border-radius: 50%;\n            width: 40px;\n            height: 40px;\n            animation: spin 1s linear infinite;\n            margin: 0 auto;\n        }\n        @keyframes spin {\n            0% { transform: rotate(0deg); }\n            100% { transform: rotate(360deg); }\n        }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <h1>📤 Upload ZIP para Drive</h1>\n        <p class=\"subtitle\">Envie seu arquivo ZIP para o Google Drive</p>\n        \n        <form id=\"uploadForm\">\n            <div class=\"form-group\">\n                <label for=\"filePath\">Caminho do Arquivo ZIP</label>\n                <input \n                    type=\"text\" \n                    id=\"filePath\" \n                    name=\"filePath\" \n                    placeholder=\"C:\\Users\\SeuNome\\arquivo.zip\"\n                    required\n                >\n                <div class=\"hint\">Windows: C:\\pasta\\arquivo.zip | Linux/Mac: /home/user/arquivo.zip</div>\n            </div>\n            \n            <div class=\"form-group\">\n                <label for=\"fileName\">Nome no Google Drive (opcional)</label>\n                <input \n                    type=\"text\" \n                    id=\"fileName\" \n                    name=\"fileName\" \n                    placeholder=\"meu-arquivo.zip\"\n                >\n                <div class=\"hint\">Deixe em branco para usar o nome original</div>\n            </div>\n            \n            <button type=\"submit\">🚀 Fazer Upload</button>\n        </form>\n        \n        <div class=\"loading\">\n            <div class=\"spinner\"></div>\n            <p style=\"margin-top: 10px; color: #666;\">Enviando arquivo...</p>\n        </div>\n        \n        <div class=\"result\" id=\"result\"></div>\n    </div>\n    \n    <script>\n        document.getElementById('uploadForm').addEventListener('submit', async (e) => {\n            e.preventDefault();\n            \n            const filePath = document.getElementById('filePath').value;\n            const fileName = document.getElementById('fileName').value;\n            const resultDiv = document.getElementById('result');\n            const loadingDiv = document.querySelector('.loading');\n            const form = document.getElementById('uploadForm');\n            \n            // Mostrar loading\n            form.style.display = 'none';\n            loadingDiv.style.display = 'block';\n            resultDiv.style.display = 'none';\n            \n            try {\n                const response = await fetch('/webhook/upload-zip-api', {\n                    method: 'POST',\n                    headers: {\n                        'Content-Type': 'application/json',\n                    },\n                    body: JSON.stringify({ filePath, fileName })\n                });\n                \n                const data = await response.json();\n                \n                loadingDiv.style.display = 'none';\n                resultDiv.style.display = 'block';\n                \n                if (data.success) {\n                    resultDiv.className = 'result success';\n                    resultDiv.innerHTML = `\n                        <strong>✅ Upload realizado com sucesso!</strong><br><br>\n                        <strong>Arquivo:</strong> ${data.fileName}<br>\n                        <strong>ID:</strong> ${data.fileId}<br>\n                        <a href=\"${data.webViewLink}\" target=\"_blank\" style=\"color: #155724; font-weight: 600;\">📂 Ver no Google Drive</a>\n                    `;\n                } else {\n                    throw new Error(data.error || 'Erro desconhecido');\n                }\n                \n                // Resetar form após 3 segundos\n                setTimeout(() => {\n                    form.style.display = 'block';\n                    form.reset();\n                }, 3000);\n                \n            } catch (error) {\n                loadingDiv.style.display = 'none';\n                resultDiv.style.display = 'block';\n                resultDiv.className = 'result error';\n                resultDiv.innerHTML = `<strong>❌ Erro:</strong> ${error.message}`;\n                form.style.display = 'block';\n            }\n        });\n    </script>\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -576,
+        1840
+      ],
+      "id": "3aaa237e-6a78-4cbf-afe8-e4ea9e1b39ba",
+      "name": "Return HTML Form"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upload-zip-api",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "c2953c12-a393-4feb-a69f-13e783535d5c",
+      "name": "Webhook - Process Upload",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        496,
+        1744
+      ],
+      "webhookId": "upload-zip-process"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\"success\": true, \"fileId\": $json.id, \"fileName\": $json.name, \"webViewLink\": $json.webViewLink} }}",
+        "options": {}
+      },
+      "id": "e4c4d597-0044-49ce-85ab-c59e361a0491",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "filePath": "={{ $json.body.filePath }}"
+      },
+      "id": "829c4551-bec7-4c79-8c74-3520cd615663",
+      "name": "Read Binary File1",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        720,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "name": "={{ $json.body.fileName || $json.body.filePath.split(/[\\\\/]/).pop() }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "root",
+          "cachedResultName": "/ (Root folder)"
+        },
+        "options": {}
+      },
+      "id": "f2978a04-7bab-4296-8003-72965a049761",
+      "name": "Google Drive Upload1",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        960,
+        1744
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "RX23XkAgwif02fAz",
+          "name": "Google Drive account 8"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## **API para upload do zip file**\n\n\n\n\n\n",
+        "height": 400,
+        "width": 1136,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        304,
+        1616
+      ],
+      "id": "acaacd1b-4bf3-40e2-8d44-7a201d766aea",
+      "name": "Sticky Note17"
+    },
+    {
+      "parameters": {
+        "content": "## **Front-end - Upload zip file to Google drive**\n\n1. Define API upload-zip URL\n2. Send HTML Page with to read path\\name of the file to be uploaded and name on google drive (Root) folder\n\nImportant (This workflow always look for file creditcard.csv.zip in root folder\n\n\n\n\n",
+        "height": 400,
+        "width": 1136,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1472,
+        1632
+      ],
+      "id": "113476e2-93b3-48d5-a9d2-ce898e667c60",
+      "name": "Sticky Note8"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Code - Compute Metadata6": {
+      "main": [
+        [
+          {
+            "node": "Code - Create Embeddings6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File6": {
+      "main": [
+        [
+          {
+            "node": "Code - Compute Metadata6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Download1": {
+      "main": [
+        [
+          {
+            "node": "Decompress1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decompress1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request POST to Pinecone1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Loading Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Create Embeddings6": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request POST to Pinecone1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - API": {
+      "main": [
+        [
+          {
+            "node": "Format Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Input": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Tool1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request Fetch1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request Query1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract JSON Data": {
+      "main": [
+        [
+          {
+            "node": "Has Structured Data?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Structured Data?": {
+      "main": [
+        [
+          {
+            "node": "Prepare for Visualization",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text-Only Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare for Visualization": {
+      "main": [
+        [
+          {
+            "node": "Generate Chart URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Chart URL": {
+      "main": [
+        [
+          {
+            "node": "Format Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Final Response": {
+      "main": [
+        [
+          {
+            "node": "Respond with JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text-Only Response": {
+      "main": [
+        [
+          {
+            "node": "Format Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Extract JSON Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set load variables": {
+      "main": [
+        [
+          {
+            "node": "Google Drive Download1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Main HTML Page": {
+      "main": [
+        [
+          {
+            "node": "Respond to Main Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - HTML Page for Loading": {
+      "main": [
+        [
+          {
+            "node": "Respond to Loading Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - HTML Page for Analysis": {
+      "main": [
+        [
+          {
+            "node": "Respond to Analysis Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Pinecone Load API": {
+      "main": [
+        [
+          {
+            "node": "Set load variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Display Form": {
+      "main": [
+        [
+          {
+            "node": "Return HTML Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Process Upload": {
+      "main": [
+        [
+          {
+            "node": "Read Binary File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Binary File1": {
+      "main": [
+        [
+          {
+            "node": "Google Drive Upload1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Upload1": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "aabd5c40-4cac-4982-a335-431ee6e3ba76",
+  "meta": {
+    "instanceId": "eaebd30939f2fc986acde10a3ed66d23c143774e01686896b515439d5738bdd5"
+  },
+  "id": "s9VUWJphrQsmwU0S",
+  "tags": []
+}
