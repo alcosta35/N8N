@@ -1,5 +1,5 @@
 {
-  "name": "CreditCard Fraud Analysis v3 FINAL",
+  "name": "CreditCard Fraud Analysis v3.d FINAL",
   "nodes": [
     {
       "parameters": {
@@ -11,10 +11,10 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1824,
-        160
+        1408,
+        -16
       ],
-      "id": "a0baeb13-fcfa-4e60-ad00-0d1ab7eee28d",
+      "id": "7ff4d075-3353-4e76-9fbd-5a1210b0bff9",
       "name": "Sticky Note1"
     },
     {
@@ -27,10 +27,10 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        3552,
-        176
+        3136,
+        0
       ],
-      "id": "93039521-31d9-49f4-9494-5820df9ce412",
+      "id": "68c4d739-730e-45d3-98df-3a99d599cafc",
       "name": "Sticky Note"
     },
     {
@@ -40,10 +40,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3920,
-        336
+        3504,
+        160
       ],
-      "id": "6a464029-14c3-40ab-9a8f-f2a488d8fb78",
+      "id": "65800ae9-0f18-45fe-9ec7-159814b7be0a",
       "name": "Code - Compute Metadata6"
     },
     {
@@ -53,10 +53,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4176,
-        336
+        3760,
+        160
       ],
-      "id": "dd832603-169d-4758-afcc-06992b6db975",
+      "id": "664000f6-759d-418a-8f34-aed453c8670b",
       "name": "Code - Create Embeddings6"
     },
     {
@@ -71,21 +71,21 @@
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1,
       "position": [
-        3184,
-        336
+        2768,
+        160
       ],
-      "id": "907de61a-1f05-4461-8641-da59f693ef33",
+      "id": "123be757-5cf4-483a-b9ed-5193680e5567",
       "name": "Extract from File6"
     },
     {
       "parameters": {},
-      "id": "67d791d5-e172-4983-9924-e099bbd9b746",
+      "id": "d92d3d33-c652-4c5c-a29d-6591dde49bb8",
       "name": "Decompress1",
       "type": "n8n-nodes-base.compression",
       "typeVersion": 1,
       "position": [
-        2624,
-        336
+        2208,
+        160
       ],
       "alwaysOutputData": false
     },
@@ -103,13 +103,13 @@
           "binaryPropertyName": "data"
         }
       },
-      "id": "58eece74-b633-4c7a-ac33-bf1ff0b232d6",
+      "id": "7e38d309-4e1d-494a-a7bb-67a0b7d4f097",
       "name": "Google Drive Download1",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        2320,
-        336
+        1904,
+        160
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -121,16 +121,12 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Set load variables').first().json.pineconeLocation }}/vectors/upsert",
+        "url": "=https://creditcard-fraud-eda-x8q6et6.svc.aped-4627-b74a.pinecone.io/vectors/upsert",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "httpBearerAuth",
+        "nodeCredentialType": "pineconeApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {
-              "name": "Api-Key",
-              "value": "={{ $('Set load variables').first().json.pinecone_APIKey }}"
-            },
             {
               "name": "Content-Type",
               "value": "application/json"
@@ -152,10 +148,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        5024,
-        336
+        4608,
+        160
       ],
-      "id": "8a7a767f-4514-443e-989e-df11b749db9b",
+      "id": "86d45254-58fe-4b5f-9815-e247c04039e5",
       "name": "HTTP Request POST to Pinecone1",
       "retryOnFail": true,
       "waitBetweenTries": 5000,
@@ -165,6 +161,10 @@
         "httpBearerAuth": {
           "id": "Cqo552PCiiOYtIoa",
           "name": "Bearer Auth account 3"
+        },
+        "pineconeApi": {
+          "id": "unR8Atft8zE7js78",
+          "name": "PineconeApi account"
         }
       }
     },
@@ -178,10 +178,10 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        4816,
-        176
+        4400,
+        0
       ],
-      "id": "ad70f002-0dc2-4436-abf5-8b486f549fca",
+      "id": "519b8dee-b3f7-4e11-902f-2331b6d5098f",
       "name": "Sticky Note4"
     },
     {
@@ -194,10 +194,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        800,
-        1184
+        384,
+        1008
       ],
-      "id": "50d06344-70da-49f4-ae91-9abe49f57f7d",
+      "id": "94d4d262-5bc2-4cf5-b7f4-e247641f1bbd",
       "name": "Webhook - API",
       "webhookId": "452ecb7e-ae92-4c72-8aaf-c1fc42c5efce"
     },
@@ -236,10 +236,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1200,
-        1184
+        784,
+        1008
       ],
-      "id": "41a7037e-0e4e-49c7-8b7e-6938b50e8fc9",
+      "id": "01f24af0-39cb-4fa2-9041-a1d1baf88df0",
       "name": "Format Input"
     },
     {
@@ -250,10 +250,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        5008,
-        1184
+        4592,
+        1008
       ],
-      "id": "8423a451-86b0-4b90-8149-26edcf9db0b9",
+      "id": "af43cec0-d192-43c8-bd8c-64735b2e1287",
       "name": "Respond with JSON"
     },
     {
@@ -272,10 +272,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        1920,
-        1360
+        1504,
+        1184
       ],
-      "id": "071507fa-3ddb-47ca-aa8d-61ff3f1ed9b4",
+      "id": "9a71e7c8-fdac-4769-bfe6-eae8e42ac731",
       "name": "Anthropic Chat Model",
       "credentials": {
         "anthropicApi": {
@@ -291,10 +291,10 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        2224,
-        1424
+        1808,
+        1248
       ],
-      "id": "dae1f204-4cd0-4bfb-b85a-b17ecdbf3491",
+      "id": "426f0512-b266-4dd4-93a1-6314b38af911",
       "name": "Simple Memory1"
     },
     {
@@ -302,16 +302,18 @@
       "type": "@n8n/n8n-nodes-langchain.toolCode",
       "typeVersion": 1.3,
       "position": [
-        2816,
-        1424
+        2400,
+        1248
       ],
-      "id": "45f6570f-f428-4300-a092-a1747bd1c1cf",
+      "id": "bdb1f852-b473-43f4-906e-833e476487a5",
       "name": "Code Tool1"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Format Input').first().json.pineconeUrl }}/vectors/fetch",
+        "url": "=https://creditcard-fraud-eda-x8q6et6.svc.aped-4627-b74a.pinecone.io/vectors/fetch",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "pineconeApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -339,16 +341,24 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.2,
       "position": [
-        2528,
-        1424
+        2112,
+        1248
       ],
-      "id": "0509392c-2da5-4b5e-853a-244f8de1d893",
-      "name": "HTTP Request Fetch1"
+      "id": "b10a21d1-a531-451b-8e76-0519fb2e7b0e",
+      "name": "HTTP Request Fetch1",
+      "credentials": {
+        "pineconeApi": {
+          "id": "unR8Atft8zE7js78",
+          "name": "PineconeApi account"
+        }
+      }
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('Format Input').first().json.pineconeUrl }}/query",
+        "url": "=https://creditcard-fraud-eda-x8q6et6.svc.aped-4627-b74a.pinecone.io/query",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "pineconeApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -376,11 +386,17 @@
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.2,
       "position": [
-        2672,
-        1424
+        2256,
+        1248
       ],
-      "id": "ae8de0fb-6d40-4578-a85b-171e597ccf11",
-      "name": "HTTP Request Query1"
+      "id": "e3a8de47-404e-4dff-9086-f0798f1bb25a",
+      "name": "HTTP Request Query1",
+      "credentials": {
+        "pineconeApi": {
+          "id": "unR8Atft8zE7js78",
+          "name": "PineconeApi account"
+        }
+      }
     },
     {
       "parameters": {
@@ -389,10 +405,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3568,
-        1184
+        3152,
+        1008
       ],
-      "id": "36693778-0f78-4b08-bafa-793be053c9cb",
+      "id": "cd4323d4-12c7-46c0-9cad-6ee0f04f540e",
       "name": "Extract JSON Data"
     },
     {
@@ -421,10 +437,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        3856,
-        1184
+        3440,
+        1008
       ],
-      "id": "7a03e5d8-5881-44a2-9d95-9d31613d7436",
+      "id": "b656a9df-aa8c-4187-a561-584373f2919e",
       "name": "Has Structured Data?"
     },
     {
@@ -434,10 +450,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4144,
-        1088
+        3728,
+        912
       ],
-      "id": "5960bc37-3a3b-4227-823b-61a4aa371eb7",
+      "id": "d7efa324-d63c-4a75-96de-6d9b0f1a338c",
       "name": "Prepare for Visualization"
     },
     {
@@ -447,10 +463,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4432,
-        1088
+        4016,
+        912
       ],
-      "id": "3201fa17-3000-4a59-8395-c9c4c4881ae5",
+      "id": "626b7951-4e88-4cd8-8ec7-100e5043c746",
       "name": "Generate Chart URL"
     },
     {
@@ -460,10 +476,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4720,
-        1184
+        4304,
+        1008
       ],
-      "id": "7b213780-b77f-40e9-a7ec-fb66f9f1191b",
+      "id": "24edc52f-3960-493f-b108-68bf7024996b",
       "name": "Format Final Response"
     },
     {
@@ -473,10 +489,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4144,
-        1280
+        3728,
+        1104
       ],
-      "id": "9f2b6f61-9064-4cb0-97f2-b48e7d4b53bb",
+      "id": "29f58fe2-0ff2-4b69-8222-c7dbb31f73b8",
       "name": "Text-Only Response"
     },
     {
@@ -489,10 +505,10 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1824,
-        992
+        1408,
+        816
       ],
-      "id": "f7e9ded7-663a-4d63-92d2-344ef6bf6d15",
+      "id": "1c6df87d-d8a7-4747-9ecf-d6d08bc244e9",
       "name": "Sticky Note5"
     },
     {
@@ -504,10 +520,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        2208,
-        1184
+        1792,
+        1008
       ],
-      "id": "80457538-2aeb-4b40-bbac-d5e8d7e2a457",
+      "id": "8049b041-cf83-4d45-975f-e3b18397250d",
       "name": "AI Agent1"
     },
     {
@@ -545,10 +561,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1248,
-        336
+        832,
+        160
       ],
-      "id": "132cfc8f-31dd-48a9-8719-3cbf0f980f26",
+      "id": "8e229493-b2ed-4698-b3e8-594eda830f9a",
       "name": "Set load variables"
     },
     {
@@ -561,26 +577,26 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1456,
-        1120
+        -1872,
+        944
       ],
-      "id": "136d8025-c75c-4aeb-ac2c-ef01a27c1090",
+      "id": "402e5a3b-20fa-479d-bbe5-25ea86cbf137",
       "name": "Sticky Note6"
     },
     {
       "parameters": {
         "content": "## **API para carga do arquivo**\n\n1.  Define API fraud-load-api to start the data base load process\n2.  Seta variaveis com parametros de carga como \n2.1 URL do Index do pinecone\n2.2 Api-key do pinecone\n2.3 Numero de registros para carga no pinecone (rate limit faz velocidade da carga de ~ 30,000 registros/hora)\n\n\n\n",
         "height": 400,
-        "width": 1136,
+        "width": 1264,
         "color": 2
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        320,
-        128
+        -96,
+        -48
       ],
-      "id": "440721ba-e242-43d3-91fa-93dda9842972",
+      "id": "a3772ae1-dab2-49d9-bf31-db570e575659",
       "name": "Sticky Note7"
     },
     {
@@ -593,10 +609,10 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        3072,
-        992
+        2656,
+        816
       ],
-      "id": "dad0995d-cc33-4c1d-8037-68e32d072874",
+      "id": "3e9980b7-f91e-49fd-9f0b-930491cdd024",
       "name": "Sticky Note9"
     },
     {
@@ -609,10 +625,10 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1456,
-        208
+        -1872,
+        32
       ],
-      "id": "21599b94-b6c9-47fc-847f-587cb8719199",
+      "id": "212327e2-f8ab-4d92-a526-b48bc63f9cdc",
       "name": "Sticky Note10"
     },
     {
@@ -625,10 +641,10 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1456,
-        672
+        -1872,
+        496
       ],
-      "id": "94f847ac-63de-4953-804b-1a6137fa394f",
+      "id": "184d2897-7b3b-4d84-962d-f9f730e002ca",
       "name": "Sticky Note11"
     },
     {
@@ -640,10 +656,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -944,
-        368
+        -1360,
+        192
       ],
-      "id": "902460b2-7934-4ae0-94b1-803eb75f802b",
+      "id": "e221ea7d-8eba-46db-9a7c-75646c839168",
       "name": "Webhook - Main HTML Page",
       "webhookId": "fraud-chat-html"
     },
@@ -656,10 +672,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -944,
-        832
+        -1360,
+        656
       ],
-      "id": "6679f3bf-bf0c-4d44-9a15-4167761cf8ae",
+      "id": "242590ef-9c06-4d52-8e23-616db3baf502",
       "name": "Webhook - HTML Page for Loading",
       "webhookId": "fraud-chat-html"
     },
@@ -672,10 +688,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -944,
-        1280
+        -1360,
+        1104
       ],
-      "id": "be84be59-8b48-4286-b14d-9f0642caf442",
+      "id": "7b242f15-11a9-4bd8-8fac-e11b6e6d4849",
       "name": "Webhook - HTML Page for Analysis",
       "webhookId": "fraud-chat-html"
     },
@@ -697,16 +713,16 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        -576,
-        368
+        -992,
+        192
       ],
-      "id": "bf4124de-145f-49da-a7f9-4e994650a4d8",
+      "id": "a0d4cf5d-1592-4c85-a99b-0a5be625bc17",
       "name": "Respond to Main Webhook"
     },
     {
       "parameters": {
         "respondWith": "text",
-        "responseBody": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Carregar Dados - Fraud Detection</title>\n  <style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body {\n      font-family: \"Segoe UI\", Tahoma, Geneva, Verdana, sans-serif;\n      background: linear-gradient(135deg, #667eea, #764ba2);\n      min-height: 100vh;\n      display: flex;\n      justify-content: center;\n      align-items: center;\n      padding: 20px;\n    }\n    .container {\n      background: #ffffff;\n      border-radius: 20px;\n      box-shadow: 0px 8px 25px rgba(0,0,0,0.25);\n      max-width: 700px;\n      width: 100%;\n      overflow: hidden;\n    }\n    .header {\n      background: #667eea;\n      padding: 30px;\n      text-align: center;\n      color: white;\n    }\n    .header h1 { font-size: 28px; margin-bottom: 10px; }\n    .header p { opacity: 0.9; font-size: 14px; }\n    .content {\n      padding: 40px;\n    }\n    .form-group {\n      margin-bottom: 25px;\n    }\n    .form-group label {\n      display: block;\n      margin-bottom: 8px;\n      font-weight: 600;\n      color: #333;\n    }\n    .form-group input {\n      width: 100%;\n      padding: 12px;\n      border: 2px solid #e0e0e0;\n      border-radius: 8px;\n      font-size: 14px;\n      transition: border-color 0.3s;\n    }\n    .form-group input:focus {\n      outline: none;\n      border-color: #667eea;\n    }\n    .form-group .helper {\n      font-size: 12px;\n      color: #666;\n      margin-top: 5px;\n    }\n    .estimate {\n      background: #f0f4ff;\n      border-left: 4px solid #667eea;\n      padding: 15px;\n      border-radius: 8px;\n      margin: 20px 0;\n      display: none;\n    }\n    .estimate strong { color: #667eea; }\n    .buttons {\n      display: flex;\n      gap: 10px;\n      margin-top: 30px;\n    }\n    .btn {\n      flex: 1;\n      padding: 14px;\n      border: none;\n      border-radius: 8px;\n      font-size: 16px;\n      font-weight: 600;\n      cursor: pointer;\n      transition: all 0.3s;\n    }\n    .btn-primary {\n      background: #667eea;\n      color: white;\n    }\n    .btn-primary:hover {\n      background: #4a5cd1;\n    }\n    .btn-primary:disabled {\n      opacity: 0.5;\n      cursor: not-allowed;\n    }\n    .btn-secondary {\n      background: #e0e0e0;\n      color: #333;\n    }\n    .btn-secondary:hover {\n      background: #d0d0d0;\n    }\n    .loading {\n      text-align: center;\n      padding: 20px;\n      display: none;\n    }\n    .loading-spinner {\n      border: 4px solid #f3f3f3;\n      border-top: 4px solid #667eea;\n      border-radius: 50%;\n      width: 40px;\n      height: 40px;\n      animation: spin 1s linear infinite;\n      margin: 0 auto 15px;\n    }\n    @keyframes spin {\n      0% { transform: rotate(0deg); }\n      100% { transform: rotate(360deg); }\n    }\n    .success {\n      background: #d4edda;\n      color: #155724;\n      padding: 15px;\n      border-radius: 8px;\n      border-left: 4px solid #28a745;\n      margin-top: 20px;\n      display: none;\n    }\n    .error {\n      background: #f8d7da;\n      color: #721c24;\n      padding: 15px;\n      border-radius: 8px;\n      border-left: 4px solid #dc3545;\n      margin-top: 20px;\n      display: none;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>📤 Carregar Dados no Pinecone</h1>\n      <p>Configure os parâmetros para carregar dados de transações</p>\n    </div>\n    <div class=\"content\">\n      <form id=\"loadForm\">\n        <div class=\"form-group\">\n          <label for=\"indexUrl\">URL do Índice Pinecone *</label>\n          <input type=\"text\" id=\"indexUrl\" required \n                 placeholder=\"https://creditcard-fraud-eda-x8q6et6.svc.aped-4627-b74a.pinecone.io\">\n          <div class=\"helper\">URL completa do índice Pinecone (sem /vectors/upsert)</div>\n        </div>\n\n        <div class=\"form-group\">\n          <label for=\"apiKey\">API Key do Pinecone *</label>\n          <input type=\"password\" id=\"apiKey\" required \n                 placeholder=\"pcsk_...\">\n          <div class=\"helper\">Sua chave de API do Pinecone</div>\n        </div>\n\n        <div class=\"form-group\">\n          <label for=\"maxRecords\">Número Máximo de Registros *</label>\n          <input type=\"number\" id=\"maxRecords\" required min=\"1000\" max=\"300000\" \n                 value=\"30000\" onchange=\"calculateEstimate()\">\n          <div class=\"helper\">Entre 1.000 e 300.000 registros (dataset completo: 284.807)</div>\n        </div>\n\n        <div class=\"form-group\">\n          <label for=\"startLine\">Registro Inicial *</label>\n          <input type=\"number\" id=\"startLine\" required min=\"1\" max=\"284807\" \n                 value=\"1\" onchange=\"calculateEstimate()\">\n          <div class=\"helper\">Linha inicial para começar a leitura (padrão: 1)</div>\n        </div>\n\n        <div class=\"estimate\" id=\"estimate\">\n          <strong>⏱️ Tempo Estimado:</strong> <span id=\"estimateTime\">-</span>\n          <br>\n          <small>Baseado em 30.000 registros/hora (pré-processamento + upload Pinecone)</small>\n        </div>\n\n        <div class=\"buttons\">\n          <button type=\"button\" class=\"btn btn-secondary\" onclick=\"goBack()\">Voltar</button>\n          <button type=\"submit\" class=\"btn btn-primary\" id=\"submitBtn\">Iniciar Carga</button>\n        </div>\n      </form>\n\n      <div class=\"loading\" id=\"loading\">\n        <div class=\"loading-spinner\"></div>\n        <p>Iniciando processo de carga...</p>\n      </div>\n\n      <div class=\"success\" id=\"success\">\n        <strong>✓ Sucesso!</strong><br>\n        Processo de carga iniciado. Os dados estão sendo processados em background.\n      </div>\n\n      <div class=\"error\" id=\"error\">\n        <strong>✗ Erro</strong><br>\n        <span id=\"errorMessage\">Erro ao iniciar carga. Verifique os parâmetros.</span>\n      </div>\n    </div>\n  </div>\n\n  <script>\n    const API_URL = (() => {\n      const origin = window.location.origin;\n      const protocol = window.location.protocol;\n      const host = window.location.host;\n      if (origin && origin !== 'null' && protocol !== 'about:') return origin + '/webhook/fraud-load-api';\n      if (protocol && protocol !== 'about:' && host) return protocol + '//' + host + '/webhook/fraud-load-api';\n      return '/webhook/fraud-load-api';\n    })();\n\n    function calculateEstimate() {\n      const records = parseInt(document.getElementById('maxRecords').value) || 0;\n      if (records > 0) {\n        const hours = records / 30000;\n        const minutes = Math.ceil(hours * 60);\n        let timeStr = '';\n        if (hours >= 1) {\n          const h = Math.floor(hours);\n          const m = Math.ceil((hours - h) * 60);\n          timeStr = `${h}h ${m}min`;\n        } else {\n          timeStr = `${minutes} minutos`;\n        }\n        document.getElementById('estimateTime').textContent = timeStr;\n        document.getElementById('estimate').style.display = 'block';\n      }\n    }\n\n    function goBack() {\n      const baseUrl = (() => {\n        const origin = window.location.origin;\n        const protocol = window.location.protocol;\n        const host = window.location.host;\n        if (origin && origin !== 'null' && protocol !== 'about:') return origin;\n        if (protocol && protocol !== 'about:' && host) return protocol + '//' + host;\n        return '';\n      })();\n      window.location.href = baseUrl + '/webhook/fraud-chat';\n    }\n\n    calculateEstimate();\n\n    document.getElementById('loadForm').addEventListener('submit', async function(e) {\n      e.preventDefault();\n      \n      const indexUrl = document.getElementById('indexUrl').value.trim();\n      const apiKey = document.getElementById('apiKey').value.trim();\n      const maxRecords = parseInt(document.getElementById('maxRecords').value);\n      const startLine = parseInt(document.getElementById('startLine').value);\n\n      document.getElementById('loadForm').style.display = 'none';\n      document.getElementById('loading').style.display = 'block';\n\n      try {\n        const response = await fetch(API_URL, {\n          method: 'POST',\n          headers: { 'Content-Type': 'application/json' },\n          body: JSON.stringify({\n            indexUrl: indexUrl,\n            apiKey: apiKey,\n            maxRecords: maxRecords,\n            startLine: startLine\n          })\n        });\n\n        const result = await response.json();\n        console.log('Load response:', result);\n\n        document.getElementById('loading').style.display = 'none';\n        document.getElementById('success').style.display = 'block';\n\n        setTimeout(() => goBack(), 3000);\n\n      } catch (error) {\n        console.error('Error:', error);\n        document.getElementById('loading').style.display = 'none';\n        document.getElementById('error').style.display = 'block';\n        document.getElementById('errorMessage').textContent = error.message;\n      }\n    });\n  </script>\n</body>\n</html>",
+        "responseBody": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Carregar Dados - Fraud Detection</title>\n  <style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body {\n      font-family: \"Segoe UI\", Tahoma, Geneva, Verdana, sans-serif;\n      background: linear-gradient(135deg, #667eea, #764ba2);\n      min-height: 100vh;\n      display: flex;\n      justify-content: center;\n      align-items: center;\n      padding: 20px;\n    }\n    .container {\n      background: #ffffff;\n      border-radius: 20px;\n      box-shadow: 0px 8px 25px rgba(0,0,0,0.25);\n      max-width: 700px;\n      width: 100%;\n      overflow: hidden;\n    }\n    .header {\n      background: #667eea;\n      padding: 30px;\n      text-align: center;\n      color: white;\n    }\n    .header h1 { font-size: 28px; margin-bottom: 10px; }\n    .header p { opacity: 0.9; font-size: 14px; }\n    .content {\n      padding: 40px;\n    }\n    .form-group {\n      margin-bottom: 25px;\n    }\n    .form-group label {\n      display: block;\n      margin-bottom: 8px;\n      font-weight: 600;\n      color: #333;\n    }\n    .form-group input {\n      width: 100%;\n      padding: 12px;\n      border: 2px solid #e0e0e0;\n      border-radius: 8px;\n      font-size: 14px;\n      transition: border-color 0.3s;\n    }\n    .form-group input:focus {\n      outline: none;\n      border-color: #667eea;\n    }\n    .form-group .helper {\n      font-size: 12px;\n      color: #666;\n      margin-top: 5px;\n    }\n    .estimate {\n      background: #f0f4ff;\n      border-left: 4px solid #667eea;\n      padding: 15px;\n      border-radius: 8px;\n      margin: 20px 0;\n      display: none;\n    }\n    .estimate strong { color: #667eea; }\n    .buttons {\n      display: flex;\n      gap: 10px;\n      margin-top: 30px;\n    }\n    .btn {\n      flex: 1;\n      padding: 14px;\n      border: none;\n      border-radius: 8px;\n      font-size: 16px;\n      font-weight: 600;\n      cursor: pointer;\n      transition: all 0.3s;\n    }\n    .btn-primary {\n      background: #667eea;\n      color: white;\n    }\n    .btn-primary:hover {\n      background: #4a5cd1;\n    }\n    .btn-primary:disabled {\n      opacity: 0.5;\n      cursor: not-allowed;\n    }\n    .btn-secondary {\n      background: #e0e0e0;\n      color: #333;\n    }\n    .btn-secondary:hover {\n      background: #d0d0d0;\n    }\n    .loading {\n      text-align: center;\n      padding: 20px;\n      display: none;\n    }\n    .loading-spinner {\n      border: 4px solid #f3f3f3;\n      border-top: 4px solid #667eea;\n      border-radius: 50%;\n      width: 40px;\n      height: 40px;\n      animation: spin 1s linear infinite;\n      margin: 0 auto 15px;\n    }\n    @keyframes spin {\n      0% { transform: rotate(0deg); }\n      100% { transform: rotate(360deg); }\n    }\n    .success {\n      background: #d4edda;\n      color: #155724;\n      padding: 15px;\n      border-radius: 8px;\n      border-left: 4px solid #28a745;\n      margin-top: 20px;\n      display: none;\n    }\n    .error {\n      background: #f8d7da;\n      color: #721c24;\n      padding: 15px;\n      border-radius: 8px;\n      border-left: 4px solid #dc3545;\n      margin-top: 20px;\n      display: none;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>📤 Carregar Dados no Pinecone</h1>\n      <p>Configure os parâmetros para carregar dados de transações</p>\n    </div>\n    <div class=\"content\">\n      <form id=\"loadForm\">\n        <div class=\"form-group\">\n          <label for=\"maxRecords\">Número Máximo de Registros *</label>\n          <input type=\"number\" id=\"maxRecords\" required min=\"1000\" max=\"300000\" \n                 value=\"30000\" onchange=\"calculateEstimate()\">\n          <div class=\"helper\">Entre 1.000 e 300.000 registros (dataset completo: 284.807)</div>\n        </div>\n\n        <div class=\"form-group\">\n          <label for=\"startLine\">Registro Inicial *</label>\n          <input type=\"number\" id=\"startLine\" required min=\"1\" max=\"284807\" \n                 value=\"1\" onchange=\"calculateEstimate()\">\n          <div class=\"helper\">Linha inicial para começar a leitura (padrão: 1)</div>\n        </div>\n\n        <div class=\"estimate\" id=\"estimate\">\n          <strong>⏱️ Tempo Estimado:</strong> <span id=\"estimateTime\">-</span>\n          <br>\n          <small>Baseado em 30.000 registros/hora (pré-processamento + upload Pinecone)</small>\n        </div>\n\n        <div class=\"buttons\">\n          <button type=\"button\" class=\"btn btn-secondary\" onclick=\"goBack()\">Voltar</button>\n          <button type=\"submit\" class=\"btn btn-primary\" id=\"submitBtn\">Iniciar Carga</button>\n        </div>\n      </form>\n\n      <div class=\"loading\" id=\"loading\">\n        <div class=\"loading-spinner\"></div>\n        <p>Iniciando processo de carga...</p>\n      </div>\n\n      <div class=\"success\" id=\"success\">\n        <strong>✓ Sucesso!</strong><br>\n        Processo de carga iniciado. Os dados estão sendo processados em background.\n      </div>\n\n      <div class=\"error\" id=\"error\">\n        <strong>✗ Erro</strong><br>\n        <span id=\"errorMessage\">Erro ao iniciar carga. Verifique os parâmetros.</span>\n      </div>\n    </div>\n  </div>\n\n  <script>\n    // Hardcoded values - you should replace these with your actual values\n    const PINECONE_INDEX_URL = 'https://creditcard-fraud-eda-x8q6et6.svc.aped-4627-b74a.pinecone.io';\n    const PINECONE_API_KEY = 'YOUR_PINECONE_API_KEY_HERE';\n\n    const API_URL = (() => {\n      const origin = window.location.origin;\n      const protocol = window.location.protocol;\n      const host = window.location.host;\n      if (origin && origin !== 'null' && protocol !== 'about:') return origin + '/webhook/fraud-load-api';\n      if (protocol && protocol !== 'about:' && host) return protocol + '//' + host + '/webhook/fraud-load-api';\n      return '/webhook/fraud-load-api';\n    })();\n\n    function calculateEstimate() {\n      const records = parseInt(document.getElementById('maxRecords').value) || 0;\n      if (records > 0) {\n        const hours = records / 30000;\n        const minutes = Math.ceil(hours * 60);\n        let timeStr = '';\n        if (hours >= 1) {\n          const h = Math.floor(hours);\n          const m = Math.ceil((hours - h) * 60);\n          timeStr = `${h}h ${m}min`;\n        } else {\n          timeStr = `${minutes} minutos`;\n        }\n        document.getElementById('estimateTime').textContent = timeStr;\n        document.getElementById('estimate').style.display = 'block';\n      }\n    }\n\n    function goBack() {\n      const baseUrl = (() => {\n        const origin = window.location.origin;\n        const protocol = window.location.protocol;\n        const host = window.location.host;\n        if (origin && origin !== 'null' && protocol !== 'about:') return origin;\n        if (protocol && protocol !== 'about:' && host) return protocol + '//' + host;\n        return '';\n      })();\n      window.location.href = baseUrl + '/webhook/fraud-chat';\n    }\n\n    calculateEstimate();\n\n    document.getElementById('loadForm').addEventListener('submit', async function(e) {\n      e.preventDefault();\n      \n      const maxRecords = parseInt(document.getElementById('maxRecords').value);\n      const startLine = parseInt(document.getElementById('startLine').value);\n\n      document.getElementById('loadForm').style.display = 'none';\n      document.getElementById('loading').style.display = 'block';\n\n      try {\n        const response = await fetch(API_URL, {\n          method: 'POST',\n          headers: { 'Content-Type': 'application/json' },\n          body: JSON.stringify({\n            indexUrl: PINECONE_INDEX_URL,\n            apiKey: PINECONE_API_KEY,\n            maxRecords: maxRecords,\n            startLine: startLine\n          })\n        });\n\n        const result = await response.json();\n        console.log('Load response:', result);\n\n        document.getElementById('loading').style.display = 'none';\n        document.getElementById('success').style.display = 'block';\n\n        setTimeout(() => goBack(), 3000);\n\n      } catch (error) {\n        console.error('Error:', error);\n        document.getElementById('loading').style.display = 'none';\n        document.getElementById('error').style.display = 'block';\n        document.getElementById('errorMessage').textContent = error.message;\n      }\n    });\n  </script>\n</body>\n</html>",
         "options": {
           "responseHeaders": {
             "entries": [
@@ -721,16 +737,16 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        -576,
-        832
+        -992,
+        656
       ],
-      "id": "84191a91-89c8-45c7-b75d-1ef9864971cc",
+      "id": "7c821063-dff7-4244-8689-e7668bd69a70",
       "name": "Respond to Loading Webhook"
     },
     {
       "parameters": {
         "respondWith": "text",
-        "responseBody": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Fraud Detection Chat</title>\n  <style>\n    body {\n      margin: 0;\n      font-family: \"Segoe UI\", Tahoma, Geneva, Verdana, sans-serif;\n      background: linear-gradient(135deg, #667eea, #764ba2);\n      display: flex;\n      justify-content: center;\n      align-items: center;\n      height: 100vh;\n      color: #fff;\n    }\n\n    .chat-container {\n      width: 90%;\n      max-width: 700px;\n      height: 85vh;\n      background: #ffffff;\n      border-radius: 20px;\n      display: flex;\n      flex-direction: column;\n      box-shadow: 0px 8px 25px rgba(0,0,0,0.25);\n      overflow: hidden;\n    }\n\n    .header {\n      background: #667eea;\n      padding: 15px;\n      font-size: 20px;\n      font-weight: bold;\n      text-align: center;\n      color: white;\n    }\n\n    .config-panel {\n      background: #f7f7fb;\n      padding: 15px;\n      border-bottom: 1px solid #ddd;\n    }\n\n    .config-group {\n      margin-bottom: 10px;\n    }\n\n    .config-group label {\n      display: block;\n      font-size: 12px;\n      color: #667eea;\n      font-weight: 600;\n      margin-bottom: 5px;\n    }\n\n    .config-group input {\n      width: 100%;\n      padding: 8px;\n      border: 1px solid #ccc;\n      border-radius: 6px;\n      font-size: 13px;\n    }\n\n    .messages {\n      flex: 1;\n      padding: 20px;\n      overflow-y: auto;\n      background: #f7f7fb;\n    }\n\n    .message {\n      margin-bottom: 15px;\n      display: flex;\n    }\n\n    .message.user {\n      justify-content: flex-end;\n    }\n\n    .message.agent {\n      justify-content: flex-start;\n    }\n\n    .message-content {\n      max-width: 70%;\n      padding: 12px 18px;\n      border-radius: 18px;\n      line-height: 1.4;\n      white-space: pre-wrap;\n    }\n\n    .user .message-content {\n      background: #667eea;\n      color: #fff;\n      border-bottom-right-radius: 4px;\n    }\n\n    .agent .message-content {\n      background: #ececec;\n      color: #333;\n      border-bottom-left-radius: 4px;\n    }\n\n    .input-container {\n      display: flex;\n      padding: 15px;\n      background: #fff;\n      border-top: 1px solid #ddd;\n    }\n\n    .input-container input {\n      flex: 1;\n      padding: 12px;\n      border-radius: 25px;\n      border: 1px solid #ccc;\n      outline: none;\n      margin-right: 10px;\n    }\n\n    .input-container button {\n      padding: 12px 20px;\n      border: none;\n      border-radius: 25px;\n      background: #667eea;\n      color: #fff;\n      font-weight: bold;\n      cursor: pointer;\n      transition: background 0.3s;\n    }\n\n    .input-container button:hover {\n      background: #4a5cd1;\n    }\n\n    .loading {\n      text-align: center;\n      padding: 10px;\n      color: #888;\n      font-size: 14px;\n      display: none;\n    }\n\n    .insights {\n      margin-top: 10px;\n      padding: 10px;\n      background: #fafafa;\n      border-left: 4px solid #667eea;\n      font-size: 14px;\n      border-radius: 8px;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"chat-container\">\n    <div class=\"header\">💳 Fraud Detection Assistant</div>\n    \n    <div class=\"config-panel\">\n      <div class=\"config-group\">\n        <label for=\"pineconeUrl\">URL do Índice Pinecone para Análise</label>\n        <input type=\"text\" id=\"pineconeUrl\" \n               value=\"https://creditcard-fraud-eda2-x8q6et6.svc.aped-4627-b74a.pinecone.io\"\n               placeholder=\"URL do índice Pinecone\">\n      </div>\n      <div class=\"config-group\">\n        <label for=\"pineconeKey\">API Key do Pinecone</label>\n        <input type=\"password\" id=\"pineconeKey\" \n               placeholder=\"pcsk_...\">\n      </div>\n    </div>\n\n    <div id=\"chatContainer\" class=\"messages\"></div>\n    <div id=\"loading\" class=\"loading\">⏳ Processando...</div>\n    <div class=\"input-container\">\n      <input id=\"userInput\" type=\"text\" placeholder=\"Digite sua mensagem...\" onkeypress=\"handleKeyPress(event)\">\n      <button id=\"sendBtn\" onclick=\"sendMessage()\">Enviar</button>\n    </div>\n  </div>\n\n  <script>\n    const WEBHOOK_URL = (() => {\n      const origin = window.location.origin;\n      const protocol = window.location.protocol;\n      const host = window.location.host;\n      \n      // Check if we have a valid origin (not 'null' and not 'about:')\n      if (origin && origin !== 'null' && protocol !== 'about:') {\n        return origin + '/webhook/fraud-chat-api';\n      }\n      \n      // Check if we have valid protocol and host\n      if (protocol && protocol !== 'about:' && host) {\n        return protocol + '//' + host + '/webhook/fraud-chat-api';\n      }\n      \n      // Fallback to relative path\n      return '/webhook/fraud-chat-api';\n    })();\n\n    console.log('WEBHOOK_URL:', WEBHOOK_URL);\n    console.log('Origin:', window.location.origin);\n    console.log('Protocol:', window.location.protocol);\n    console.log('Host:', window.location.host);\n\n    function handleKeyPress(event) {\n      if (event.key === 'Enter') sendMessage();\n    }\n\n    async function sendMessage() {\n      const input = document.getElementById('userInput');\n      const message = input.value.trim();\n      const pineconeUrl = document.getElementById('pineconeUrl').value.trim();\n      const pineconeKey = document.getElementById('pineconeKey').value.trim();\n      \n      if (!message) return;\n\n      addMessage(message, 'user');\n      input.value = '';\n      document.getElementById('loading').style.display = 'block';\n      document.getElementById('sendBtn').disabled = true;\n\n      try {\n        const response = await fetch(WEBHOOK_URL, {\n          method: 'POST',\n          headers: { 'Content-Type': 'application/json' },\n          body: JSON.stringify({ \n            message: message, \n            sessionId: 'web-session',\n            pineconeUrl: pineconeUrl,\n            pineconeKey: pineconeKey\n          })\n        });\n\n        const result = await response.json();\n        console.log('Response data:', result);\n\n        displayResponse(result);\n\n      } catch (error) {\n        console.error('Error:', error);\n        addMessage('⚠️ Desculpe, encontrei um erro. Por favor, tente novamente.', 'agent');\n      }\n\n      document.getElementById('loading').style.display = 'none';\n      document.getElementById('sendBtn').disabled = false;\n    }\n\n    function displayResponse(result) {\n      const res = Array.isArray(result) ? result[0] : result;\n\n      const responseText = res.text || res.reply || res.message || 'Sem resposta do servidor.';\n      const chartUrl = res.chartUrl || null;\n      const insights = res.insights || [];\n\n      addMessage(responseText, 'agent', chartUrl, insights);\n\n      if (res.hasVisualization && res.data) {\n        console.log('Structured data:', res.data);\n        console.log('Metadata:', res.metadata);\n      }\n    }\n\n    function addMessage(text, sender, chartUrl, insights) {\n      const container = document.getElementById('chatContainer');\n      const messageDiv = document.createElement('div');\n      messageDiv.className = `message ${sender}`;\n      const contentDiv = document.createElement('div');\n      contentDiv.className = 'message-content';\n\n      const cleanText = text ? text.replace(/```json[\\s\\S]*?```/g, '') : '';\n\n      contentDiv.innerHTML = cleanText\n        .replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>')\n        .replace(/\\n\\n/g, '<br><br>')\n        .replace(/\\n/g, '<br>')\n        .replace(/###\\s+(.*?)(<br>|$)/g, '<h3>$1</h3>')\n        .replace(/##\\s+(.*?)(<br>|$)/g, '<h3>$1</h3>')\n        .replace(/- (.*?)(<br>|$)/g, '<li>$1</li>');\n\n      if (chartUrl) {\n        const img = document.createElement('img');\n        img.src = chartUrl;\n        img.alt = 'Visualização de Dados';\n        img.style.marginTop = '15px';\n        img.style.maxWidth = '100%';\n        contentDiv.appendChild(img);\n      }\n\n      if (insights && insights.length > 0) {\n        const insightsDiv = document.createElement('div');\n        insightsDiv.className = 'insights';\n        insightsDiv.innerHTML = '<strong>Principais Insights:</strong><br>' + \n          insights.map(i => '• ' + i).join('<br>');\n        contentDiv.appendChild(insightsDiv);\n      }\n\n      messageDiv.appendChild(contentDiv);\n      container.appendChild(messageDiv);\n      container.scrollTop = container.scrollHeight;\n    }\n  </script>\n</body>\n</html>",
+        "responseBody": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Fraud Detection Chat</title>\n  <style>\n    body {\n      margin: 0;\n      font-family: \"Segoe UI\", Tahoma, Geneva, Verdana, sans-serif;\n      background: linear-gradient(135deg, #667eea, #764ba2);\n      display: flex;\n      justify-content: center;\n      align-items: center;\n      height: 100vh;\n      color: #fff;\n    }\n\n    .chat-container {\n      width: 90%;\n      max-width: 700px;\n      height: 85vh;\n      background: #ffffff;\n      border-radius: 20px;\n      display: flex;\n      flex-direction: column;\n      box-shadow: 0px 8px 25px rgba(0,0,0,0.25);\n      overflow: hidden;\n    }\n\n    .header {\n      background: #667eea;\n      padding: 15px;\n      font-size: 20px;\n      font-weight: bold;\n      text-align: center;\n      color: white;\n    }\n\n    .messages {\n      flex: 1;\n      padding: 20px;\n      overflow-y: auto;\n      background: #f7f7fb;\n    }\n\n    .message {\n      margin-bottom: 15px;\n      display: flex;\n    }\n\n    .message.user {\n      justify-content: flex-end;\n    }\n\n    .message.agent {\n      justify-content: flex-start;\n    }\n\n    .message-content {\n      max-width: 70%;\n      padding: 12px 18px;\n      border-radius: 18px;\n      line-height: 1.4;\n      white-space: pre-wrap;\n    }\n\n    .user .message-content {\n      background: #667eea;\n      color: #fff;\n      border-bottom-right-radius: 4px;\n    }\n\n    .agent .message-content {\n      background: #ececec;\n      color: #333;\n      border-bottom-left-radius: 4px;\n    }\n\n    .input-container {\n      display: flex;\n      padding: 15px;\n      background: #fff;\n      border-top: 1px solid #ddd;\n    }\n\n    .input-container input {\n      flex: 1;\n      padding: 12px;\n      border-radius: 25px;\n      border: 1px solid #ccc;\n      outline: none;\n      margin-right: 10px;\n    }\n\n    .input-container button {\n      padding: 12px 20px;\n      border: none;\n      border-radius: 25px;\n      background: #667eea;\n      color: #fff;\n      font-weight: bold;\n      cursor: pointer;\n      transition: background 0.3s;\n    }\n\n    .input-container button:hover {\n      background: #4a5cd1;\n    }\n\n    .loading {\n      text-align: center;\n      padding: 10px;\n      color: #888;\n      font-size: 14px;\n      display: none;\n    }\n\n    .insights {\n      margin-top: 10px;\n      padding: 10px;\n      background: #fafafa;\n      border-left: 4px solid #667eea;\n      font-size: 14px;\n      border-radius: 8px;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"chat-container\">\n    <div class=\"header\">💳 Fraud Detection Assistant</div>\n\n    <div id=\"chatContainer\" class=\"messages\"></div>\n    <div id=\"loading\" class=\"loading\">⏳ Processando...</div>\n    <div class=\"input-container\">\n      <input id=\"userInput\" type=\"text\" placeholder=\"Digite sua mensagem...\" onkeypress=\"handleKeyPress(event)\">\n      <button id=\"sendBtn\" onclick=\"sendMessage()\">Enviar</button>\n    </div>\n  </div>\n\n  <script>\n    // Hardcoded Pinecone configuration - replace with your actual values\n    const PINECONE_URL = 'https://creditcard-fraud-eda2-x8q6et6.svc.aped-4627-b74a.pinecone.io';\n    const PINECONE_API_KEY = 'YOUR_PINECONE_API_KEY_HERE';\n\n    const WEBHOOK_URL = (() => {\n      const origin = window.location.origin;\n      const protocol = window.location.protocol;\n      const host = window.location.host;\n      \n      if (origin && origin !== 'null' && protocol !== 'about:') {\n        return origin + '/webhook/fraud-chat-api';\n      }\n      \n      if (protocol && protocol !== 'about:' && host) {\n        return protocol + '//' + host + '/webhook/fraud-chat-api';\n      }\n      \n      return '/webhook/fraud-chat-api';\n    })();\n\n    console.log('WEBHOOK_URL:', WEBHOOK_URL);\n\n    function handleKeyPress(event) {\n      if (event.key === 'Enter') sendMessage();\n    }\n\n    async function sendMessage() {\n      const input = document.getElementById('userInput');\n      const message = input.value.trim();\n      \n      if (!message) return;\n\n      addMessage(message, 'user');\n      input.value = '';\n      document.getElementById('loading').style.display = 'block';\n      document.getElementById('sendBtn').disabled = true;\n\n      try {\n        const response = await fetch(WEBHOOK_URL, {\n          method: 'POST',\n          headers: { 'Content-Type': 'application/json' },\n          body: JSON.stringify({ \n            message: message, \n            sessionId: 'web-session',\n            pineconeUrl: PINECONE_URL,\n            pineconeKey: PINECONE_API_KEY\n          })\n        });\n\n        const result = await response.json();\n        console.log('Response data:', result);\n\n        displayResponse(result);\n\n      } catch (error) {\n        console.error('Error:', error);\n        addMessage('⚠️ Desculpe, encontrei um erro. Por favor, tente novamente.', 'agent');\n      }\n\n      document.getElementById('loading').style.display = 'none';\n      document.getElementById('sendBtn').disabled = false;\n    }\n\n    function displayResponse(result) {\n      const res = Array.isArray(result) ? result[0] : result;\n\n      const responseText = res.text || res.reply || res.message || 'Sem resposta do servidor.';\n      const chartUrl = res.chartUrl || null;\n      const insights = res.insights || [];\n\n      addMessage(responseText, 'agent', chartUrl, insights);\n\n      if (res.hasVisualization && res.data) {\n        console.log('Structured data:', res.data);\n        console.log('Metadata:', res.metadata);\n      }\n    }\n\n    function addMessage(text, sender, chartUrl, insights) {\n      const container = document.getElementById('chatContainer');\n      const messageDiv = document.createElement('div');\n      messageDiv.className = `message ${sender}`;\n      const contentDiv = document.createElement('div');\n      contentDiv.className = 'message-content';\n\n      const cleanText = text ? text.replace(/```json[\\s\\S]*?```/g, '') : '';\n\n      contentDiv.innerHTML = cleanText\n        .replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>')\n        .replace(/\\n\\n/g, '<br><br>')\n        .replace(/\\n/g, '<br>')\n        .replace(/###\\s+(.*?)(<br>|$)/g, '<h3>$1</h3>')\n        .replace(/##\\s+(.*?)(<br>|$)/g, '<h3>$1</h3>')\n        .replace(/- (.*?)(<br>|$)/g, '<li>$1</li>');\n\n      if (chartUrl) {\n        const img = document.createElement('img');\n        img.src = chartUrl;\n        img.alt = 'Visualização de Dados';\n        img.style.marginTop = '15px';\n        img.style.maxWidth = '100%';\n        contentDiv.appendChild(img);\n      }\n\n      if (insights && insights.length > 0) {\n        const insightsDiv = document.createElement('div');\n        insightsDiv.className = 'insights';\n        insightsDiv.innerHTML = '<strong>Principais Insights:</strong><br>' + \n          insights.map(i => '• ' + i).join('<br>');\n        contentDiv.appendChild(insightsDiv);\n      }\n\n      messageDiv.appendChild(contentDiv);\n      container.appendChild(messageDiv);\n      container.scrollTop = container.scrollHeight;\n    }\n  </script>\n</body>\n</html>",
         "options": {
           "responseHeaders": {
             "entries": [
@@ -745,10 +761,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        -576,
-        1280
+        -992,
+        1104
       ],
-      "id": "6f84c3b6-4062-4a38-9541-35338714ef24",
+      "id": "84fd1cf2-0f46-4efe-8e35-aa0add2bdbc7",
       "name": "Respond to Analysis Webhook"
     },
     {
@@ -760,10 +776,10 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1776,
-        16
+        -2192,
+        -160
       ],
-      "id": "a60bbaeb-d13d-45fb-b42c-9b7dea9d36a8",
+      "id": "7686f1b9-cda9-4dd8-b42a-18e25c76629c",
       "name": "Sticky Note12"
     },
     {
@@ -775,10 +791,10 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        0,
-        0
+        -416,
+        -176
       ],
-      "id": "eb3566d5-c1ae-4dd8-91bf-0fbcfd3239b8",
+      "id": "aec2e81b-e705-41a2-a3b8-1c03f6927f10",
       "name": "Sticky Note13"
     },
     {
@@ -790,10 +806,10 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1760,
-        800
+        1344,
+        624
       ],
-      "id": "6b8638a9-4dc3-4dee-8798-cc741ae937b2",
+      "id": "2bfb1162-091f-4cea-a6dc-a4323773347e",
       "name": "Sticky Note14"
     },
     {
@@ -805,26 +821,26 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1728,
-        0
+        1312,
+        -176
       ],
-      "id": "3ad7426f-2151-4ecc-9fde-50f4beaca865",
+      "id": "d0f25163-fde0-4489-87a7-4571cb749b05",
       "name": "Sticky Note15"
     },
     {
       "parameters": {
         "content": "## **API para Analise estatistica**\n\n1.  Define API fraud-api to start the AI Agent for statistical analysis\n2.  Formata entrada de dados\n\n\n\n",
         "height": 400,
-        "width": 1136,
+        "width": 1264,
         "color": 2
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        304,
-        1008
+        -112,
+        832
       ],
-      "id": "6e850dea-7802-4c09-aec3-6df80299cf08",
+      "id": "1b4e07df-276b-457f-b6c2-ce3d42eae2bc",
       "name": "Sticky Note16"
     },
     {
@@ -837,10 +853,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        816,
-        336
+        400,
+        160
       ],
-      "id": "ce214aad-7843-4b40-8552-04182254d556",
+      "id": "167054a2-9ee7-4d79-a826-7b87b02b9c67",
       "name": "Webhook Pinecone Load API",
       "webhookId": "8c6717e1-6c7d-448e-ae70-bbb08cdeec93"
     },
@@ -852,10 +868,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        5568,
-        336
+        5152,
+        160
       ],
-      "id": "2701b13b-e457-4a4e-9b2f-309c8de0c5f0",
+      "id": "50c1cf84-a9fb-4020-8d21-e7da7055727c",
       "name": "Respond to Loading Webhook2"
     },
     {
@@ -864,13 +880,13 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "71a68261-e583-432f-a025-fa7afd87fc7d",
+      "id": "647e05c8-eaaf-45de-a418-d71846c5c51e",
       "name": "Webhook - Display Form",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -944,
-        1840
+        -1360,
+        1664
       ],
       "webhookId": "e707f7ae-749a-4cb2-a2a6-3d360a980e86"
     },
@@ -883,10 +899,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        -576,
-        1840
+        -992,
+        1664
       ],
-      "id": "3aaa237e-6a78-4cbf-afe8-e4ea9e1b39ba",
+      "id": "1c0b12e5-6413-40c7-9cb2-cc41a8b6a77e",
       "name": "Return HTML Form"
     },
     {
@@ -896,13 +912,13 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "c2953c12-a393-4feb-a69f-13e783535d5c",
+      "id": "8d91fd8e-d320-4967-b1d6-a08c4c0af419",
       "name": "Webhook - Process Upload",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        496,
-        1744
+        -80,
+        1568
       ],
       "webhookId": "upload-zip-process"
     },
@@ -912,31 +928,31 @@
         "responseBody": "={{ {\"success\": true, \"fileId\": $json.id, \"fileName\": $json.name, \"webViewLink\": $json.webViewLink} }}",
         "options": {}
       },
-      "id": "e4c4d597-0044-49ce-85ab-c59e361a0491",
+      "id": "df832fb1-d8c1-4ae9-8f7d-4a7880765b37",
       "name": "Respond Success",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        1216,
-        1744
+        944,
+        1584
       ]
     },
     {
       "parameters": {
-        "filePath": "={{ $json.body.filePath }}"
+        "filePath": "={{ $node['Webhook - Process Upload'].json.body.filePath }}"
       },
-      "id": "829c4551-bec7-4c79-8c74-3520cd615663",
+      "id": "e8365c20-92ed-4b1c-af68-9cf3a0f344e5",
       "name": "Read Binary File1",
       "type": "n8n-nodes-base.readBinaryFile",
       "typeVersion": 1,
       "position": [
-        720,
-        1744
+        608,
+        1584
       ]
     },
     {
       "parameters": {
-        "name": "={{ $json.body.fileName || $json.body.filePath.split(/[\\\\/]/).pop() }}",
+        "name": "={{ $node['Webhook - Process Upload'].json.body.fileName || $node['Webhook - Process Upload'].json.body.filePath.split(/[\\\\/]/).pop() }}",
         "driveId": {
           "__rl": true,
           "mode": "list",
@@ -950,13 +966,13 @@
         },
         "options": {}
       },
-      "id": "f2978a04-7bab-4296-8003-72965a049761",
+      "id": "dad78b3e-9851-41b6-a4ec-92180f426c5b",
       "name": "Google Drive Upload1",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        960,
-        1744
+        768,
+        1584
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -969,16 +985,16 @@
       "parameters": {
         "content": "## **API para upload do zip file**\n\n\n\n\n\n",
         "height": 400,
-        "width": 1136,
+        "width": 1248,
         "color": 2
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        304,
-        1616
+        -112,
+        1440
       ],
-      "id": "acaacd1b-4bf3-40e2-8d44-7a201d766aea",
+      "id": "7586a5a4-d298-4e51-bae7-76fd1d7635c0",
       "name": "Sticky Note17"
     },
     {
@@ -991,11 +1007,111 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1472,
-        1632
+        -1888,
+        1456
       ],
-      "id": "113476e2-93b3-48d5-a9d2-ce898e667c60",
+      "id": "d0f7ad81-a9c6-45e9-9fa8-2afffc127b85",
       "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "={{ $json.body.fileName }}",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "mode": "list",
+            "value": "root",
+            "cachedResultName": "/ (Root folder)"
+          },
+          "whatToSearch": "all",
+          "fileTypes": [
+            "*"
+          ],
+          "includeTrashed": false
+        },
+        "options": {
+          "fields": [
+            "name",
+            "id"
+          ]
+        }
+      },
+      "id": "9b1cf9da-4d00-4ad3-be7f-c069cc3d361d",
+      "name": "Search Existing File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        128,
+        1568
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "RX23XkAgwif02fAz",
+          "name": "Google Drive account 8"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "file-exists",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c64a487d-b596-476f-b1bd-11f72e34f8e3",
+      "name": "File Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        304,
+        1568
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "deleteFile",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $node['Search Existing File'].json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "deletePermanently": true
+        }
+      },
+      "id": "852192cc-d564-451b-a2ad-b43025a0e681",
+      "name": "Delete Old File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        464,
+        1488
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "RX23XkAgwif02fAz",
+          "name": "Google Drive account 8"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -1005,6 +1121,17 @@
         [
           {
             "node": "Code - Create Embeddings6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Create Embeddings6": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request POST to Pinecone1",
             "type": "main",
             "index": 0
           }
@@ -1022,17 +1149,6 @@
         ]
       ]
     },
-    "Google Drive Download1": {
-      "main": [
-        [
-          {
-            "node": "Decompress1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Decompress1": {
       "main": [
         [
@@ -1044,22 +1160,22 @@
         ]
       ]
     },
-    "HTTP Request POST to Pinecone1": {
+    "Google Drive Download1": {
       "main": [
         [
           {
-            "node": "Respond to Loading Webhook2",
+            "node": "Decompress1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Code - Create Embeddings6": {
+    "HTTP Request POST to Pinecone1": {
       "main": [
         [
           {
-            "node": "HTTP Request POST to Pinecone1",
+            "node": "Respond to Loading Webhook2",
             "type": "main",
             "index": 0
           }
@@ -1297,7 +1413,7 @@
       "main": [
         [
           {
-            "node": "Read Binary File1",
+            "node": "Search Existing File",
             "type": "main",
             "index": 0
           }
@@ -1325,16 +1441,56 @@
           }
         ]
       ]
+    },
+    "Search Existing File": {
+      "main": [
+        [
+          {
+            "node": "File Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "File Exists?": {
+      "main": [
+        [
+          {
+            "node": "Delete Old File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Binary File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Old File": {
+      "main": [
+        [
+          {
+            "node": "Read Binary File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "aabd5c40-4cac-4982-a335-431ee6e3ba76",
+  "versionId": "b5f1d424-348d-4fc9-a427-dc95c5f2d5b7",
   "meta": {
     "instanceId": "eaebd30939f2fc986acde10a3ed66d23c143774e01686896b515439d5738bdd5"
   },
-  "id": "s9VUWJphrQsmwU0S",
+  "id": "lopUZuv3ns8k9DXg",
   "tags": []
 }
